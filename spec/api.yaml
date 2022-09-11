@@ -1,0 +1,3932 @@
+openapi: 3.0.0
+info:
+  title: Snapp! Box
+  description: API Documentation
+  contact: {}
+  version: '0.1.5'
+  x-logo:
+    url: '/static/logo.svg'
+    altText: 'Snappbox'
+servers:
+  - url: https://customer.snapp-box.com
+    variables: {}
+  - url: https://customer-stg.snapp-box.com
+    variables: {}
+paths:
+  /v1/customer/current_balance:
+    post:
+      tags:
+        - Methods
+      summary: Get Account Balance
+      description: You can get your account balance using this method.
+      operationId: GetAccountBalance
+      parameters:
+        - name: Authorization
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: token
+      responses:
+        '200':
+          description: ''
+          headers: {}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAccountBalance'
+              example:
+                currentBalance: 5095334
+      deprecated: false
+      security: []
+  /v1/customer/create_order:
+    post:
+      tags:
+        - Methods
+      summary: Create Order
+      description: "With this endpoint, you can put orders in snappbox system\n\nUse Cases \n\n** a. **	Single Pickup - Single destination - prepaid/cod\n\n** b. **	Single Pickup - Multiple destinations - prepaid order\n\n** c. **	Single Pickup - Multiple destinations - cash order\n\n** d. **        Prepending Orders\n\n\n\n\nCaution:\n\n** A ** there is no necessity to pass \"customerId\" in any of the methods\n\n** B ** for receving \"webhook details\" using unique \"customerRefId\" is required\n\n\n\n** Prepending Orders **\n\n  - The Logic of the prepending order is:\n    Any order which is placed any time before the start of the time slot is considered prepending. T is configurable and accessible from the admin panel.\n    Also, there is a job that will run every 10 minutes and if there are orders in which their time slot is started will change the status from prepending to pending.\n\n - 'customerRefId' should be unique\n\n\n\n\n\n\n\n** Parameters **\n\n| Parameter|DataType|Required|Description|\n|---|---|---|---|\n|customerId|String| N |It will be given from snappbox to the customer after customer login.|\n|** data ** | ** Array **| Y | This object contains all order details including dropOffDetails, itemDetails, pickUpDetails and orderDetails array objects.  |\n| ** timeSlotDTO **  |  ** smallDateTime ** | N  | The beginning and ending of the Order life cycle.  |\n|  startTimSlot  | smallDateTime | N  | Beginning of the time period that orders should be in Pending status, untill then Order's status is prePending.  |\n|  endTimSlot  | smallDateTime | N  | The ending of the time period that orders should be delivered also, Batching will use this time in priorotize logics.  |\n| ** dropOffDetails **  |  ** Array ** | Y  | This object refers to each destination and cotanins following parameters. |\n| address  |  String | Y  | Address of the drop off location. |\n| cashOnDelivery  |  Integer | Y  | The amount of money that should be collected on delivery location. You can pass zero if there is no money to be collected. |\n| cashOnPickup  |  Integer | Y  | The amount of money that should be collected on pickup location. You can pass zero if there is no money to be collected. If you are passing this parameter in \"dropOffDetail\", then it should be passed as zero. |\n| comment  |  string | N  | Notes that will be shown to biker in dropp off location. |\n| contactName  |  string | Y  | Name of the receiver of the package. |\n| contactPhoneNumber  |  string | Y  | Phone number of the receiver of the package. |\n| email  |  string | N | Email of the receiver of the package. |\n| landmark  |  string | N | Extra detail on location for helping biker to find the location easily. |\n| latitude  |  float | Y | Latitude of the drop off location. |\n| longitude  |  float | Y | Longitude of the drop off location. |\n| paymentType  |  string | Y | This field tells if the biker need to collect and will receive only \"cod\" and \"prepaid\". \"cod\" for the cash payments and \"prepaid\" for credit payments. |\n| plate  |  string | N | Plate number. |\n| sequenceNumber  |  integer | Y | Each stop including pickups and destinations are a terminal in our system. These sequence numbers are referring to the sequence of these terminals. For instance first pickup sequence number is 1, the second pickup sequence number is 2, the first destination's sequence number is 3 and the second destination sequence number is 4 and it goes on. |\n| type  |  string | Y | This parameter will receive only \"drop\". |\n| ** itemDetails **  |  ** Array ** | Y  | This object refers to the items that our biker should deliver or collect. For each of item that need to be picked up or delivered, you need to add an object, including following params.|\n| dropOffSequenceNumber  |  integer | Y | This is the number of stop/terminal that this item should be dropped. |\n| name  |  string | Y | Name of the item. |\n| packageValue  |  integer | N | This parameter will reffer to package value. |\n| pickedUpSequenceNumber  |  integer | Y | This is the number of stop/terminal that this item should be pickedup. |\n| quantity  |  integer | Y | This is the number of items that should be pickedup. |\n| quantityMeasuringUnit  |  string | Y | This is the unit that you will add to the end quantity. |\n| ** orderDetails **  |  ** Array ** | Y  | This object contains all the detail of the order. |\n| city  |  string | Y | Use the following format for your city: \"Mashhad\", \"Tehran\" and \"isfahan\". |\n| customerEmail  |  string | N | Customer email. |\n| customerRefId  |  string | Y | OrderId reference from the customer side. |\n| customerId  |  string | N | It will be given from snappbox to the customer after customer login. |\n| customerName  |  string | Y | Customer name. |\n| customerPhonenumber  |  string | N | Phone number of the Customer. |\n| deliveryCategory  |  string | y | Type of delivery category required. For now, we currently have 4 types: \"bike\" , \"bike-without-box\", \"van-heavy\" and \"van\"  and \"carbox\" will be added soon. |\n| deliveryFarePaymentType  |  string | y | This is how the price of the order will be paid. There are 2 types: \"cod\" and \"prepaid\". The cod and prepaid mentioned here is different than \"paymentType\" mentioned in above. |\n| isReturn  |  boolean | Y | If biker should return to the first terminal it should be \"true\" and if there is no return it should be \"false\". |\n| vehicleCategory  |  string | Y | The type of vehicle that you want to order, technically it should be the same as \"deliveryCategory\".\n | pricingId  |  string | N | the pricing id that you got from pricing end-point.\n  | sequenceNumberDeliveryCollection |  integer | N | If an order price payment method is cash, this parameter will declare in which terminal this money should be collected. (this field is relevant only if deliveryFarePaymentMode is not prepaid)\n| ** pickUpDetails **  |  ** Array ** | Y  | This object is referring to the pickup location details, if there is more than one pickup location you need to have one object for each of them, and handle the sequence of the pickup and drop off with \"dropOffSequenceNumber\". |\n| address  |  String | Y  | Address of the pickup location. |\n| cashOnDelivery  |  Integer | Y  | The amount of money that should be collected on delivery location. You can pass zero if there is no money to be collected. If you are passing this parameter in \"pickUpDetail\" object, then it should be passed as zero. |\n| cashOnPickup  |  Integer | Y  | The amount of money that should be collected on pickup location. You can pass zero if there is no money to be collected. |\n| comment  |  string | N  | Notes that will be shown to the biker in pick up location. |\n| contactName  |  string | Y  |Name of the pickup contact person. |\n| contactPhoneNumber  |  string | Y  |Phone number of the pickup contact person. |\n| email  |  string | N | Email of the pickup contact person. |\n| landmark  |  string | N | Extra detail on location for helping biker to find the location easily. |\n| latitude  |  float | Y | Latitude of the pick up location. |\n| longitude  |  float | Y | Longitude of the pick up location. |\n| paymentType  |  string | Y | This field tells if the biker needs to collect and will receive only \"cod\" and \"prepaid\". \"cod\" for the cash payments and \"prepaid\" for credit payments. |\n| plate  |  string | N | Plate number. |\n| sequenceNumber  |  integer | Y | Each stop including pickups and destinations are a terminal in our system. These sequence numbers are referring to the sequence of these terminals. For instance first pickup sequence number is 1, the second pickup sequence number is 2, the first destination's sequence number is 3 and the second destination sequence number is 4 and it goes on. |\n| type  |  string | Y | This parameter will receive only \"pickup\". |\n|  batchAble | boolean | N | you can make your Order a batch potential if true, and will not be considered as Batch posibility if false |"
+      operationId: CreateOrder
+      parameters:
+        - name: Authorization
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: token
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+            example:
+              data:
+                timeSlotDTO:
+                  startTimeSlot: '2020-04-26 19:00:00'
+                  endTimeSlot: '2020-04-26 23:26:00'
+                itemDetails:
+                  - pickedUpSequenceNumber: 1
+                    dropOffSequenceNumber: 2
+                    name: کره پاستوریزه ۵۰ گرمی پگاه
+                    quantity: 3
+                    quantityMeasuringUnit: unit
+                    packageValue: 5589
+                    createdAt: '2019-02-26 18:08:03'
+                    updatedAt: '2019-02-26 18:08:03'
+                  - pickedUpSequenceNumber: 1
+                    dropOffSequenceNumber: 2
+                    name: خامه صبحانه 125 میلی لیتری کاله
+                    quantity: 2
+                    quantityMeasuringUnit: unit
+                    packageValue: 4800
+                    createdAt: '2019-02-26 18:08:03'
+                    updatedAt: '2019-02-26 18:08:03'
+                  - pickedUpSequenceNumber: 1
+                    dropOffSequenceNumber: 2
+                    name: دسر طالبی ۱۰۰ گرمی دنت
+                    quantity: 1
+                    quantityMeasuringUnit: unit
+                    packageValue: 1780
+                    createdAt: '2019-02-26 18:08:03'
+                    updatedAt: '2019-02-26 18:08:03'
+                  - pickedUpSequenceNumber: 1
+                    dropOffSequenceNumber: 2
+                    name: پاپ کورن کچاپ فیلی 80 گرمی چی توز
+                    quantity: 2
+                    quantityMeasuringUnit: unit
+                    packageValue: 3600
+                    createdAt: '2019-02-26 18:08:03'
+                    updatedAt: '2019-02-26 18:08:03'
+                  - pickedUpSequenceNumber: 1
+                    dropOffSequenceNumber: 2
+                    name: حلوا ارده شکری ساده ۱۰۰ گرمی عقاب
+                    quantity: 1
+                    quantityMeasuringUnit: unit
+                    packageValue: 3850
+                    createdAt: '2019-02-26 18:08:03'
+                    updatedAt: '2019-02-26 18:08:03'
+                orderDetails:
+                  packageSize: 0.20000000000000001
+                  city: tehran
+                  deliveryCategory: bike
+                  deliveryFarePaymentType: cod
+                  isReturn: false
+                  pricingId: 8e941a24-f17c-47d3-bae5-299f3113a240
+                  sequenceNumberDeliveryCollection: 1
+                  totalFare: 105000
+                  customerRefId: 31
+                  voucherCode:
+                  waitingTime: 0
+                pickUpDetails:
+                  - id:
+                    contactName: مارکت سعادت
+                    address: 'جردن '
+                    contactPhoneNumber: 09376764602
+                    plate: ''
+                    sequenceNumber: 1
+                    unit: ''
+                    comment: ''
+                    latitude: 35.784869
+                    longitude: 51.376753999999998
+                    type: pickup
+                    collectCash: no
+                    paymentType: prepaid
+                    cashOnPickup: 0
+                    cashOnDelivery: 0
+                    isHub:
+                    vendorId:
+                dropOffDetails:
+                  - id:
+                    contactName: نام تستی کانتکت
+                    address: 'maghsad2 '
+                    contactPhoneNumber: 09108986973
+                    plate: ''
+                    sequenceNumber: 2
+                    unit: ''
+                    comment: کامنت تستی
+                    latitude: 35.706674
+                    longitude: 51.364911999999997
+                    type: drop
+                    collectCash: no
+                    paymentType: prepaid
+                    cashOnPickup: 0
+                    cashOnDelivery: 0
+                    isHub:
+                    vendorId:
+        required: true
+      responses:
+        '201':
+          description: ''
+          headers: {}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateOrder'
+              example:
+                status_code: 201
+                data:
+                  orderId: 1422
+                api_status: success
+                message: Order created succesfully.
+                key: ORDER_CREATED
+      deprecated: false
+      security: []
+  /v1/customer/cancel_order:
+    post:
+      tags:
+        - Methods
+      summary: Cancel Order
+      description: "** Description **\n\nAn order can be canceled before the package is picked up, so once the biker pick up the packages, the order is not cancelable. you can cancel order with passing following parameters.\n\n** Parameters ** \n\n| Parameter|DataType| Required | Description  |\n|---|---|---|---|\n| customerId  |  String | N  | It will be given from snappbox to the customer after customer login. |\n| orderId  |  string | Y  | order id that will be generated by snappbox. |\n"
+      operationId: CancelOrder
+      parameters:
+        - name: Accept
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: application/json
+        - name: Authorization
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: token
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelOrderRequest'
+            example:
+              orderId: string
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers: {}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelOrder'
+              example:
+                status_code: 200
+                data:
+                api_status: success
+                message: Cancellation successful
+                key: CANCEL_SUCCESS
+      deprecated: false
+      security: []
+  /v1/customer/order_history:
+    post:
+      tags:
+        - Methods
+      summary: Get Order List
+      description: "** Description **\n\nUsing this method you can get all your delivered/ongoing orders of your account.\n\n\n** Parameters ** \n\n\n| Parameter| DataType  | Required | Description  |\n|---|---|---|---|\n| customerId  |  String | N  | It will be given from snappbox to the customer after customer login. |\n| ongoing  |  boolean | Y  | By passing this parameter as \"true\" you will only get the list of ongoing orders and if you set it as \"false\" you will see all non ongoing status. |\n| pageNumber  |  integer | Y  | Pagination offset. |\n| pageSize  |  integer | Y  | Number of orders you want to get. |"
+      operationId: GetOrderList
+      parameters:
+        - name: Accept
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: application/json
+        - name: Authorization
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: token
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetOrderListRequest'
+            example:
+              ongoing: true
+              pageNumber: 1
+              pageSize: 5
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers: {}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetOrderList'
+              example:
+                orderList:
+                  - id: 1406
+                    customerName: Test
+                    customerPhonenumber: 9852123654
+                    customerRefId: 129
+                    customerEmail: test@test.com
+                    status: PENDING
+                    rating:
+                    ratingComment:
+                    cancelledBy:
+                    cancelledAt:
+                    bikerDeliveryFare: 1000
+                    customerDeliveryFare: 1000
+                    bikerRateChartId: 3
+                    customerRateChartId: 3
+                    bikerPricingConfigId: 3
+                    customerPricingConfigId: 3
+                    deliveryFarePaymentType: prepaid
+                    customerWalletId: 2
+                    sequenceNumberDeliveryCollection:
+                    isCancellable: false
+                    isDeniable: false
+                    city: tehran
+                    deliveryCategory: bike
+                    isReturn: false
+                    items:
+                      - id: 2804
+                        name: تست کباب
+                        quantity: 1
+                        quantityMeasuringUnit: unit
+                        status:
+                        statusReason:
+                        packageValue: 13000
+                        pickedUpSequenceNumber:
+                        dropOffSequenceNumber:
+                        createdAt: '2018-04-10 11:57:52'
+                        updatedAt: '2018-04-10 11:57:52'
+                    allotments: []
+                    terminals:
+                      - id: 2968
+                        latitude: 35.773311999999997
+                        longitude: 51.4183466
+                        unit:
+                        address: فقط برای تست است
+                        plate: ''
+                        landmark: فقط برای تست است
+                        comment: descripttion
+                        contactName: تست اول
+                        contactPhoneNumber: 2188198740
+                        email: ''
+                        packageHandlerName:
+                        packageHandlerSignatureUrl:
+                        packageHandlerRelation:
+                        sequenceNumber: 1
+                        type: pickup
+                        status: PENDING
+                        arrivedPickupAt:
+                        pickedUpAt:
+                        arrivedDropOffAt:
+                        deliveredAt:
+                        paymentType: prepaid
+                        cashOnPickup: 0
+                        cashOnDelivery: 0
+                        pickedUpItems:
+                          - id: 2804
+                            name: تست کباب
+                            quantity: 1
+                            quantityMeasuringUnit: unit
+                            status:
+                            statusReason:
+                            packageValue: 13000
+                            pickedUpSequenceNumber:
+                            dropOffSequenceNumber:
+                            createdAt: '2018-04-10 11:57:52'
+                            updatedAt: '2018-04-10 11:57:52'
+                        droppedOffItems: []
+                        createdAt: '2018-04-10 11:57:52'
+                        updatedAt: '2018-04-10 11:57:52'
+                        rating:
+                        ratingComments:
+                      - id: 2969
+                        latitude: 35.767984499999997
+                        longitude: 51.430362899999999
+                        unit:
+                        address: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                        plate: ''
+                        landmark: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                        comment: descripttion
+                        contactName: امیر  مدرسی
+                        contactPhoneNumber: 09357896521
+                        email: ''
+                        packageHandlerName:
+                        packageHandlerSignatureUrl:
+                        packageHandlerRelation:
+                        sequenceNumber: 2
+                        type: drop
+                        status: PENDING
+                        arrivedPickupAt:
+                        pickedUpAt:
+                        arrivedDropOffAt:
+                        deliveredAt:
+                        paymentType: prepaid
+                        cashOnPickup: 0
+                        cashOnDelivery: 0
+                        pickedUpItems: []
+                        droppedOffItems:
+                          - id: 2804
+                            name: تست کباب
+                            quantity: 1
+                            quantityMeasuringUnit: unit
+                            status:
+                            statusReason:
+                            packageValue: 13000
+                            pickedUpSequenceNumber:
+                            dropOffSequenceNumber:
+                            createdAt: '2018-04-10 11:57:52'
+                            updatedAt: '2018-04-10 11:57:52'
+                        createdAt: '2018-04-10 11:57:52'
+                        updatedAt: '2018-04-10 11:57:52'
+                        rating:
+                        ratingComments:
+                    createdAt: '2018-04-10 11:57:52'
+                    updatedAt: '2018-04-10 11:57:52'
+                  - id: 1400
+                    customerId: 1
+                    customerName: Test
+                    customerPhonenumber: 9852123654
+                    customerRefId: 127
+                    customerEmail: test@test.com
+                    status: PENDING
+                    rating:
+                    ratingComment:
+                    cancelledBy:
+                    cancelledAt:
+                    bikerDeliveryFare: 1000
+                    customerDeliveryFare: 1000
+                    bikerRateChartId: 3
+                    customerRateChartId: 3
+                    bikerPricingConfigId: 3
+                    customerPricingConfigId: 3
+                    deliveryFarePaymentType: prepaid
+                    customerWalletId: 2
+                    sequenceNumberDeliveryCollection:
+                    isCancellable: false
+                    isDeniable: false
+                    city: tehran
+                    deliveryCategory: bike
+                    isReturn: false
+                    items:
+                      - id: 2794
+                        name: تست کباب
+                        quantity: 1
+                        quantityMeasuringUnit: unit
+                        status:
+                        statusReason:
+                        packageValue: 13000
+                        pickedUpSequenceNumber:
+                        dropOffSequenceNumber:
+                        createdAt: '2018-04-10 05:42:44'
+                        updatedAt: '2018-04-10 05:42:44'
+                    allotments: []
+                    terminals:
+                      - id: 2952
+                        latitude: 35.773311999999997
+                        longitude: 51.4183466
+                        unit:
+                        address: فقط برای تست است
+                        plate: ''
+                        landmark: فقط برای تست است
+                        comment: descripttion
+                        contactName: تست اول
+                        contactPhoneNumber: 2188198740
+                        email: ''
+                        packageHandlerName:
+                        packageHandlerSignatureUrl:
+                        packageHandlerRelation:
+                        sequenceNumber: 1
+                        type: pickup
+                        status: PENDING
+                        arrivedPickupAt:
+                        pickedUpAt:
+                        arrivedDropOffAt:
+                        deliveredAt:
+                        paymentType: prepaid
+                        cashOnPickup: 0
+                        cashOnDelivery: 0
+                        pickedUpItems:
+                          - id: 2794
+                            name: تست کباب
+                            quantity: 1
+                            quantityMeasuringUnit: unit
+                            status:
+                            statusReason:
+                            packageValue: 13000
+                            pickedUpSequenceNumber:
+                            dropOffSequenceNumber:
+                            createdAt: '2018-04-10 05:42:44'
+                            updatedAt: '2018-04-10 05:42:44'
+                        droppedOffItems: []
+                        createdAt: '2018-04-10 05:42:44'
+                        updatedAt: '2018-04-10 05:42:44'
+                        rating:
+                        ratingComments:
+                      - id: 2953
+                        latitude: 35.767984499999997
+                        longitude: 51.430362899999999
+                        unit:
+                        address: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                        plate: ''
+                        landmark: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                        comment: descripttion
+                        contactName: امیر  مدرسی
+                        contactPhoneNumber: 09357896521
+                        email: ''
+                        packageHandlerName:
+                        packageHandlerSignatureUrl:
+                        packageHandlerRelation:
+                        sequenceNumber: 2
+                        type: drop
+                        status: PENDING
+                        arrivedPickupAt:
+                        pickedUpAt:
+                        arrivedDropOffAt:
+                        deliveredAt:
+                        paymentType: prepaid
+                        cashOnPickup: 0
+                        cashOnDelivery: 0
+                        pickedUpItems: []
+                        droppedOffItems:
+                          - id: 2794
+                            name: تست کباب
+                            quantity: 1
+                            quantityMeasuringUnit: unit
+                            status:
+                            statusReason:
+                            packageValue: 13000
+                            pickedUpSequenceNumber:
+                            dropOffSequenceNumber:
+                            createdAt: '2018-04-10 05:42:44'
+                            updatedAt: '2018-04-10 05:42:44'
+                        createdAt: '2018-04-10 05:42:44'
+                        updatedAt: '2018-04-10 05:42:44'
+                        rating:
+                        ratingComments:
+                    createdAt: '2018-04-10 05:42:44'
+                    updatedAt: '2018-04-10 05:42:44'
+                  - id: 1399
+                    customerId: 1
+                    customerName: Test
+                    customerPhonenumber: 9852123654
+                    customerRefId: 126
+                    customerEmail: test@test.com
+                    status: PENDING
+                    rating:
+                    ratingComment:
+                    cancelledBy:
+                    cancelledAt:
+                    bikerDeliveryFare: 1000
+                    customerDeliveryFare: 1000
+                    bikerRateChartId: 3
+                    customerRateChartId: 3
+                    bikerPricingConfigId: 3
+                    customerPricingConfigId: 3
+                    deliveryFarePaymentType: prepaid
+                    customerWalletId: 2
+                    sequenceNumberDeliveryCollection:
+                    isCancellable: false
+                    isDeniable: false
+                    city: tehran
+                    deliveryCategory: bike
+                    isReturn: false
+                    items:
+                      - id: 2793
+                        name: تست کباب
+                        quantity: 1
+                        quantityMeasuringUnit: unit
+                        status:
+                        statusReason:
+                        packageValue: 13000
+                        pickedUpSequenceNumber:
+                        dropOffSequenceNumber:
+                        createdAt: '2018-04-10 05:42:15'
+                        updatedAt: '2018-04-10 05:42:15'
+                    allotments: []
+                    terminals:
+                      - id: 2950
+                        latitude: 35.773311999999997
+                        longitude: 51.4183466
+                        unit:
+                        address: فقط برای تست است
+                        plate: ''
+                        landmark: فقط برای تست است
+                        comment: descripttion
+                        contactName: تست اول
+                        contactPhoneNumber: 2188198740
+                        email: ''
+                        packageHandlerName:
+                        packageHandlerSignatureUrl:
+                        packageHandlerRelation:
+                        sequenceNumber: 1
+                        type: pickup
+                        status: PENDING
+                        arrivedPickupAt:
+                        pickedUpAt:
+                        arrivedDropOffAt:
+                        deliveredAt:
+                        paymentType: prepaid
+                        cashOnPickup: 0
+                        cashOnDelivery: 0
+                        pickedUpItems:
+                          - id: 2793
+                            name: تست کباب
+                            quantity: 1
+                            quantityMeasuringUnit: unit
+                            status:
+                            statusReason:
+                            packageValue: 13000
+                            pickedUpSequenceNumber:
+                            dropOffSequenceNumber:
+                            createdAt: '2018-04-10 05:42:15'
+                            updatedAt: '2018-04-10 05:42:15'
+                        droppedOffItems: []
+                        createdAt: '2018-04-10 05:42:15'
+                        updatedAt: '2018-04-10 05:42:15'
+                        rating:
+                        ratingComments:
+                      - id: 2951
+                        latitude: 35.767984499999997
+                        longitude: 51.430362899999999
+                        unit:
+                        address: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                        plate: ''
+                        landmark: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                        comment: descripttion
+                        contactName: امیر  مدرسی
+                        contactPhoneNumber: 09357896521
+                        email: ''
+                        packageHandlerName:
+                        packageHandlerSignatureUrl:
+                        packageHandlerRelation:
+                        sequenceNumber: 2
+                        type: drop
+                        status: PENDING
+                        arrivedPickupAt:
+                        pickedUpAt:
+                        arrivedDropOffAt:
+                        deliveredAt:
+                        paymentType: prepaid
+                        cashOnPickup: 0
+                        cashOnDelivery: 0
+                        pickedUpItems: []
+                        droppedOffItems:
+                          - id: 2793
+                            name: تست کباب
+                            quantity: 1
+                            quantityMeasuringUnit: unit
+                            status:
+                            statusReason:
+                            packageValue: 13000
+                            pickedUpSequenceNumber:
+                            dropOffSequenceNumber:
+                            createdAt: '2018-04-10 05:42:15'
+                            updatedAt: '2018-04-10 05:42:15'
+                        createdAt: '2018-04-10 05:42:15'
+                        updatedAt: '2018-04-10 05:42:15'
+                        rating:
+                        ratingComments:
+                    createdAt: '2018-04-10 05:42:15'
+                    updatedAt: '2018-04-10 05:42:15'
+                  - id: 1398
+                    customerId: 1
+                    customerName: Test
+                    customerPhonenumber: 9852123654
+                    customerRefId: 125
+                    customerEmail: test@test.com
+                    status: PENDING
+                    rating:
+                    ratingComment:
+                    cancelledBy:
+                    cancelledAt:
+                    bikerDeliveryFare: 1000
+                    customerDeliveryFare: 1000
+                    bikerRateChartId: 3
+                    customerRateChartId: 3
+                    bikerPricingConfigId: 3
+                    customerPricingConfigId: 3
+                    deliveryFarePaymentType: prepaid
+                    customerWalletId: 2
+                    sequenceNumberDeliveryCollection:
+                    isCancellable: false
+                    isDeniable: false
+                    city: tehran
+                    deliveryCategory: bike
+                    isReturn: false
+                    items:
+                      - id: 2792
+                        name: تست کباب
+                        quantity: 1
+                        quantityMeasuringUnit: unit
+                        status:
+                        statusReason:
+                        packageValue: 13000
+                        pickedUpSequenceNumber:
+                        dropOffSequenceNumber:
+                        createdAt: '2018-04-10 05:25:22'
+                        updatedAt: '2018-04-10 05:25:22'
+                    allotments: []
+                    terminals:
+                      - id: 2948
+                        latitude: 35.773311999999997
+                        longitude: 51.4183466
+                        unit:
+                        address: فقط برای تست است
+                        plate: ''
+                        landmark: فقط برای تست است
+                        comment: descripttion
+                        contactName: تست اول
+                        contactPhoneNumber: 2188198740
+                        email: ''
+                        packageHandlerName:
+                        packageHandlerSignatureUrl:
+                        packageHandlerRelation:
+                        sequenceNumber: 1
+                        type: pickup
+                        status: PENDING
+                        arrivedPickupAt:
+                        pickedUpAt:
+                        arrivedDropOffAt:
+                        deliveredAt:
+                        paymentType: prepaid
+                        cashOnPickup: 0
+                        cashOnDelivery: 0
+                        pickedUpItems:
+                          - id: 2792
+                            name: تست کباب
+                            quantity: 1
+                            quantityMeasuringUnit: unit
+                            status:
+                            statusReason:
+                            packageValue: 13000
+                            pickedUpSequenceNumber:
+                            dropOffSequenceNumber:
+                            createdAt: '2018-04-10 05:25:22'
+                            updatedAt: '2018-04-10 05:25:22'
+                        droppedOffItems: []
+                        createdAt: '2018-04-10 05:25:22'
+                        updatedAt: '2018-04-10 05:25:22'
+                        rating:
+                        ratingComments:
+                      - id: 2949
+                        latitude: 35.767984499999997
+                        longitude: 51.430362899999999
+                        unit:
+                        address: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                        plate: ''
+                        landmark: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                        comment: descripttion
+                        contactName: امیر  مدرسی
+                        contactPhoneNumber: 09357896521
+                        email: ''
+                        packageHandlerName:
+                        packageHandlerSignatureUrl:
+                        packageHandlerRelation:
+                        sequenceNumber: 2
+                        type: drop
+                        status: PENDING
+                        arrivedPickupAt:
+                        pickedUpAt:
+                        arrivedDropOffAt:
+                        deliveredAt:
+                        paymentType: prepaid
+                        cashOnPickup: 0
+                        cashOnDelivery: 0
+                        pickedUpItems: []
+                        droppedOffItems:
+                          - id: 2792
+                            name: تست کباب
+                            quantity: 1
+                            quantityMeasuringUnit: unit
+                            status:
+                            statusReason:
+                            packageValue: 13000
+                            pickedUpSequenceNumber:
+                            dropOffSequenceNumber:
+                            createdAt: '2018-04-10 05:25:22'
+                            updatedAt: '2018-04-10 05:25:22'
+                        createdAt: '2018-04-10 05:25:22'
+                        updatedAt: '2018-04-10 05:25:22'
+                        rating:
+                        ratingComments:
+                    createdAt: '2018-04-10 05:25:22'
+                    updatedAt: '2018-04-10 05:25:22'
+                  - id: 1397
+                    customerId: 1
+                    customerName: Test
+                    customerPhonenumber: 9852123654
+                    customerRefId: 124
+                    customerEmail: test@test.com
+                    status: PENDING
+                    rating:
+                    ratingComment:
+                    cancelledBy:
+                    cancelledAt:
+                    bikerDeliveryFare: 1000
+                    customerDeliveryFare: 1000
+                    bikerRateChartId: 3
+                    customerRateChartId: 3
+                    bikerPricingConfigId: 3
+                    customerPricingConfigId: 3
+                    deliveryFarePaymentType: prepaid
+                    customerWalletId: 2
+                    sequenceNumberDeliveryCollection:
+                    isCancellable: false
+                    isDeniable: false
+                    city: tehran
+                    deliveryCategory: bike
+                    isReturn: false
+                    items:
+                      - id: 2791
+                        name: تست کباب
+                        quantity: 1
+                        quantityMeasuringUnit: unit
+                        status:
+                        statusReason:
+                        packageValue: 13000
+                        pickedUpSequenceNumber:
+                        dropOffSequenceNumber:
+                        createdAt: '2018-04-10 05:19:57'
+                        updatedAt: '2018-04-10 05:19:57'
+                    allotments: []
+                    terminals:
+                      - id: 2946
+                        latitude: 35.773311999999997
+                        longitude: 51.4183466
+                        unit:
+                        address: فقط برای تست است
+                        plate: ''
+                        landmark: فقط برای تست است
+                        comment: descripttion
+                        contactName: تست اول
+                        contactPhoneNumber: 2188198740
+                        email: ''
+                        packageHandlerName:
+                        packageHandlerSignatureUrl:
+                        packageHandlerRelation:
+                        sequenceNumber: 1
+                        type: pickup
+                        status: PENDING
+                        arrivedPickupAt:
+                        pickedUpAt:
+                        arrivedDropOffAt:
+                        deliveredAt:
+                        paymentType: prepaid
+                        cashOnPickup: 0
+                        cashOnDelivery: 0
+                        pickedUpItems:
+                          - id: 2791
+                            name: تست کباب
+                            quantity: 1
+                            quantityMeasuringUnit: unit
+                            status:
+                            statusReason:
+                            packageValue: 13000
+                            pickedUpSequenceNumber:
+                            dropOffSequenceNumber:
+                            createdAt: '2018-04-10 05:19:57'
+                            updatedAt: '2018-04-10 05:19:57'
+                        droppedOffItems: []
+                        createdAt: '2018-04-10 05:19:57'
+                        updatedAt: '2018-04-10 05:19:57'
+                        rating:
+                        ratingComments:
+                      - id: 2947
+                        latitude: 35.767984499999997
+                        longitude: 51.430362899999999
+                        unit:
+                        address: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                        plate: ''
+                        landmark: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                        comment: descripttion
+                        contactName: امیر  مدرسی
+                        contactPhoneNumber: 09357896521
+                        email: ''
+                        packageHandlerName:
+                        packageHandlerSignatureUrl:
+                        packageHandlerRelation:
+                        sequenceNumber: 2
+                        type: drop
+                        status: PENDING
+                        arrivedPickupAt:
+                        pickedUpAt:
+                        arrivedDropOffAt:
+                        deliveredAt:
+                        paymentType: prepaid
+                        cashOnPickup: 0
+                        cashOnDelivery: 0
+                        pickedUpItems: []
+                        droppedOffItems:
+                          - id: 2791
+                            name: تست کباب
+                            quantity: 1
+                            quantityMeasuringUnit: unit
+                            status:
+                            statusReason:
+                            packageValue: 13000
+                            pickedUpSequenceNumber:
+                            dropOffSequenceNumber:
+                            createdAt: '2018-04-10 05:19:57'
+                            updatedAt: '2018-04-10 05:19:57'
+                        createdAt: '2018-04-10 05:19:57'
+                        updatedAt: '2018-04-10 05:19:57'
+                        rating:
+                        ratingComments:
+                    createdAt: '2018-04-10 05:19:57'
+                    updatedAt: '2018-04-10 05:19:57'
+                totalPageCount: 20
+      deprecated: false
+      security: []
+  /v1/customer/order/pricing:
+    post:
+      tags:
+        - Methods
+      summary: Get Price
+      description: "\n\n** Description **\n\nWith this endpoint you can get the pricing information about your order.\n\nUse Cases \n\n** a. **	 When you want to show the pricing information to your customers.\n\n\n** Parameters **\n\n| Parameter|DataType|Required|Description|\n|---|---|---|---|\n|city|String|Y| Use the following format for your city: \"mashhad\", \"tehran\" and \"isfahan\".|\n|customerId|String| N |It will be given from snappbox to the customer after customer login.|\n| deliveryCategory  |  string | y | Type of delivery category required. For now we have 2 types: \"bike\" and \"van\". |\n| isReturn  |  boolean | Y | If our biker should return to the first teminal it should be \"true\" and if there is no return it should be \"false\". |\n| ** items **  |  ** Array ** | Y | This object refers to the items that our biker should deliver or collect. For each of item that need to be picked up or delivered, you need to add an object, including following params.|\n| packageValue  |  integer | N | This parameter will reffer  to package value. |\n| quantity  |  integer | Y | This is the number of items that should be pickedup. |\n| quantityMeasuringUnit  |  string | Y | This is the unit that you will add to the end quantity. |\n| ** terminals **  |  ** Array ** | Y  | This object is reffering to the pickup/destination location details, if there is more than one pickup location you need to have one object for each of them, and handle the sequence of the pickup and drop off with \"dropOffSequenceNumber\". |\n| cashOnDelivery  |  Integer | Y  | The amount of money that should be collected on delivery location. You can pass zero if there is no money to be collected. If you are passing this parameter in \"pickUpDetail\" object, then it should be passed as zero. |\n| cashOnPickup  |  Integer | Y  | The amount of money that should be collected on pickup location. You can pass zero if there is no money to be collected. |\n| latitude  |  float | Y | Latitude of the pick up location. |\n| longitude  |  float | Y | Longitude of the pick up location. |\n| paymentType  |  string | Y | This field tells if the biker need to collect and will receive only \"cod\" and \"prepaid\". \"cod\" for the cash payments and \"prepaid\" for credit payments. |\n| sequenceNumber  |  integer | Y | Each stop including pickups and destinations are a terminal in our system. These sequence numbers are referring to the sequence of these terminals. For instance first pickup sequence number is 1, second pickup sequence number is 2, first destination's sequence number is 3 and second destination sequence number is 4 and it goes on. |\n| type  |  string | Y | This parameter will receive only \"pickup\" for pickup terminals and \"drop\" for dropoff terminals. |\n"
+      operationId: GetPrice
+      parameters:
+        - name: Authorization
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: token
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetPriceRequest'
+            example:
+              city: tehran
+              deliveryCategory: bike-without-box
+              deliveryFarePaymentType: prepaid
+              isReturn: false
+              pricingId:
+              sequenceNumberDeliveryCollection: 1
+              totalFare:
+              voucherCode:
+              waitingTime: 0
+              customerWalletType: SNAPP_BOX
+              terminals:
+                - id:
+                  contactName: Kiana Ahmadi
+                  address: تهران، محله شیخ هادی (انقلاب -فلسطين)، حافظ
+                  contactPhoneNumber: 09195428658
+                  plate: ''
+                  sequenceNumber: 1
+                  unit: ''
+                  comment: ''
+                  latitude: 35.698083140000051
+                  longitude: 51.411552429199226
+                  type: pickup
+                  collectCash: no
+                  paymentType: prepaid
+                  cashOnPickup: 0
+                  cashOnDelivery: 0
+                  isHub:
+                  vendorId:
+                - id:
+                  contactName: ''
+                  address: تهران، محله شیخ هادی (انقلاب -فلسطين)، حافظ
+                  contactPhoneNumber: ''
+                  plate: ''
+                  sequenceNumber: 2
+                  unit: ''
+                  comment: ''
+                  latitude: 35.698083140000051
+                  longitude: 51.412582397460945
+                  type: drop
+                  collectCash: no
+                  paymentType: prepaid
+                  cashOnPickup: 0
+                  cashOnDelivery: 0
+                  isHub:
+                  vendorId:
+              id:
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers: {}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPrice'
+              example:
+                rateChartId: 1
+                pricingConfigId: 1
+                distanceCharged: 0
+                terminalsCharged: 2
+                timeFactor: 1
+                totalFare: 70000
+                pricingId: 37ee6d99-c6f8-47bf-9248-eb305f7b4c09
+      deprecated: false
+      security: []
+  /v2/orders/{id}:
+    get:
+      tags:
+        - Methods
+      summary: Get Order Details (v2)
+      operationId: GetOrderDetails(v2)
+      parameters:
+        - name: authorization
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: token
+      responses:
+        '200':
+          description: ''
+          headers: {}
+      deprecated: false
+      security: []
+  /v2/delivery-category/by-city:
+    get:
+      tags:
+        - Methods
+      summary: Get Cities
+      operationId: GetCities
+      parameters:
+        - name: Authorization
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: token
+      responses:
+        '200':
+          description: ''
+          headers: {}
+      deprecated: false
+      security: []
+  /v1/customer/update-order:
+    put:
+      tags:
+        - Methods
+      summary: Update Order
+      operationId: UpdateOrder
+      parameters:
+        - name: Authorization
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: token
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderRequest'
+            example:
+              fromCustomerCredit: true
+              isReturn: true
+              orderId: 861273
+              payingParty: 1
+              paymentType: prepaid
+              terminals:
+                - id: 603
+                  contactName: kiana
+                  address: میرداماد، هفتم، تقاطع امیر سهیل تبریزیان، تعاونی داودیه
+                  contactPhoneNumber: 09203704100
+                  plate: ''
+                  sequenceNumber: 1
+                  unit: ''
+                  comment: ''
+                  latitude: 35.763020206104621
+                  longitude: 51.435241699218757
+                  type: pickup
+                  collectCash: no
+                  paymentType: prepaid
+                  cashOnPickup: 0
+                  cashOnDelivery: 0
+                  isHub:
+                  vendorId:
+                - id: 604
+                  contactName: ''
+                  address: میرداماد، هفتم، تقاطع آقازاده فرد
+                  contactPhoneNumber: ''
+                  plate: ''
+                  sequenceNumber: 2
+                  unit: ''
+                  comment: ''
+                  latitude: 35.763020206104621
+                  longitude: 51.436271667480476
+                  type: drop
+                  collectCash: no
+                  paymentType: prepaid
+                  cashOnPickup: 0
+                  cashOnDelivery: 0
+                  isHub:
+                  vendorId:
+                - id: 605
+                  contactName: ''
+                  address: میرداماد، کتابی، قبل از دیبا، کانون فرهنگی تربیتی شهید مفتح
+                  contactPhoneNumber: ''
+                  plate: ''
+                  sequenceNumber: 3
+                  unit: ''
+                  comment: ''
+                  latitude: 35.753408400755852
+                  longitude: 51.447601318359375
+                  type: drop
+                  collectCash: no
+                  paymentType: prepaid
+                  cashOnPickup: 0
+                  cashOnDelivery: 0
+                  isHub:
+                  vendorId:
+                - id: 606
+                  contactName: ''
+                  address: تهران، میرداماد
+                  contactPhoneNumber: ''
+                  plate: ''
+                  sequenceNumber: 4
+                  unit: ''
+                  comment: ''
+                  latitude: 35.758902246890251
+                  longitude: 51.442421508789067
+                  type: drop
+                  collectCash: no
+                  paymentType: prepaid
+                  cashOnPickup: 0
+                  cashOnDelivery: 0
+                  isHub:
+                  vendorId:
+              waitingTime: 5
+              customerWalletType: ASAN_PARDAKHT
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers: {}
+      deprecated: false
+      security: []
+  /v1/customer/Verification:
+    post:
+      tags:
+        - Methods
+      summary: Verification
+      description: You can Verify that Biker either Arrived at Pickup or Picked up at your location.
+      operationId: Verification
+      parameters:
+        - name: Authorization
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: token
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Verification'
+            example:
+              customerRefId: 1234567
+              orderId: 65432
+              verificationType: ARRIVED_AT_PICKUP
+      responses:
+        '200':
+          description: ''
+          headers: {}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Verification'
+              example:
+                Verification: OK
+      deprecated: false
+      security: []
+  /v1/order/verification:
+    post:
+      tags:
+        - Webhooks
+      summary: ORDER ACCEPTED
+      description: Following payload will be sent through Webhooks/FCM when a biker is allocated to the order, you can test this webhook with your webhook handler url.
+      operationId: ORDERACCEPTED
+      parameters: []
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ORDERACCEPTEDREQUEST'
+            example:
+              webhookType: ORDER_ACCEPTED
+              orderId: 2154
+              orderStatus: ACCEPTED
+              bikerName: Mayank Mishra
+              bikerPhone: 8904884293
+              distance: 1.2
+              orderAcceptedAt: '2018-01-01 12:12:34'
+              bikerPhotoUrl: http://url
+              notificationId: 123
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers: {}
+      deprecated: false
+  /#arrived:
+    post:
+      tags:
+        - Webhooks
+      summary: ORDER ARRIVED
+      description: Following payload will be sent through Webhooks/FCM when a biker is allocated to the order, you can test this webhook with your webhook handler url.
+      operationId: ORDERARRIVED
+      parameters: []
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ORDERARRIVEDREQUEST'
+            example:
+              webhookType: ORDER_ARRIVIED
+              orderId: 2154
+              orderStatus: ARRIVIED
+              bikerName: Mayank Mishra
+              bikerPhone: 8904884293
+              distance: 1.2
+              eta: 5
+              orderAcceptedAt: '2018-01-01 12:12:34'
+              bikerPhotoUrl: http://url
+              notificationId: 123
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers: {}
+      deprecated: false
+  /#pickedup:
+    post:
+      tags:
+        - Webhooks
+      summary: ORDER PICKED UP
+      description: Following payload will be sent through Webhooks/FCM when the biker has picked up the package, you can test this webhook with your webhook handler url.
+      operationId: ORDERPICKEDUP
+      parameters: []
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ORDERPICKEDUPREQUEST'
+            example:
+              webhookType: ORDER_STATUS_UPDATE
+              orderId: 2154
+              orderStatus: PICKED_UP
+              bikerName: Mayank Mishra
+              bikerPhone: 8904884293
+              distance: 1.2
+              eta: 5
+              orderAcceptedAt: '2018-01-01 12:12:34'
+              bikerPhotoUrl: http://url
+              notificationId: 123
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers: {}
+      deprecated: false
+  /#delivered:
+    post:
+      tags:
+        - Webhooks
+      summary: ORDER DELIVERED
+      description: Following payload will be sent through Webhooks/FCM when the biker has delivered the package, you can test this webhook with your webhook handler url.
+      operationId: ORDERDELIVERED
+      parameters: []
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ORDERDELIVEREDREQUEST'
+            example:
+              webhookType: ORDER_STATUS_UPDATE
+              orderId: 2154
+              orderStatus: DELIVERED
+              bikerName: Mayank Mishra
+              bikerPhone: 8904884293
+              distance: 1.2
+              eta: 5
+              orderAcceptedAt: '2018-01-01 12:12:34'
+              bikerPhotoUrl: http://url
+              notificationId: 123
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers: {}
+      deprecated: false
+  /#canceled:
+    post:
+      tags:
+        - Webhooks
+      summary: ORDER CANCELED
+      description: Following payload will be sent through Webhooks/FCM when the order is cancelled, you can test this webhook with your webhook handler url.
+      operationId: ORDERCANCELED
+      parameters: []
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ORDERCANCELEDREQUEST'
+            example:
+              webhookType: ORDER_STATUS_UPDATE
+              orderId: 2154
+              orderStatus: CANCELLED
+              bikerName: Mayank Mishra
+              bikerPhone: 8904884293
+              distance: 1.2
+              eta: 5
+              orderAcceptedAt: '2018-01-01 12:12:34'
+              bikerPhotoUrl: http://url
+              notificationId: 123
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers: {}
+      deprecated: false
+  /#canceled-by-system:
+    post:
+      tags:
+        - Webhooks
+      summary: ORDER CANCELED (by system)
+      description: 'If you create an order and in its time of "allocation" no biker accepts your order , it''ll be cancelled by system. '
+      operationId: ORDERCANCELED(bysystem)
+      parameters: []
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ORDERCANCELEDBYSYSTEMREQUEST'
+            example:
+              orderId: 2703246
+              orderStatus: CANCELLED
+              webhookType: ORDER_CANCELLED
+              customerRefId: 1111
+              actionBy: system
+              batch: false
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers: {}
+      deprecated: false
+  /v1/pulling:
+    get:
+      tags:
+        - Pulling
+      summary: Pull Events
+      description: If there are some failure during webhook calls we put your events on your pulling channel and you can use your customer token to fetch all failed messages with this API.
+      servers:
+        - url: https://sheypoorchi-producer-rc.snapp-box.com
+          variables: {}
+          description: Development Environment
+        - url: https://sheypoorchi-producer-stg.snapp-box.com
+          variables: {}
+          description: Staging Environment
+        - url: https://sheypoorchi-producer.snapp-box.com
+          variables: {}
+          description: Production Environment
+      parameters:
+        - name: Authorization
+          in: header
+          description: Customer Token
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: token
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/PullingEventDTO' }
+          headers:
+            pulling-data-exist:
+              schema:
+                type: boolean
+                example: true
+              description: This header become true when there are some message on your pulling channel
+        '401':
+          description: UnAuthorized
+        '403':
+          description: Forbidden
+components:
+  schemas:
+    Verification:
+      title: Verification
+      required:
+        - Verification
+      type: object
+      properties:
+        currentBalance:
+          type: string
+      example:
+        Verification: 'OK'
+
+    GetAccountBalance:
+      title: GetAccountBalance
+      required:
+        - currentBalance
+      type: object
+      properties:
+        currentBalance:
+          type: number
+      example:
+        currentBalance: 5095334
+    CreateOrderRequest:
+      title: CreateOrderRequest
+      required:
+        - data
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Data'
+      example:
+        data:
+          timeSlotDTO:
+            startTimeSlot: '2020-04-26 19:00:00'
+            endTimeSlot: '2020-04-26 23:26:00'
+          itemDetails:
+            - pickedUpSequenceNumber: 1
+              dropOffSequenceNumber: 2
+              name: کره پاستوریزه ۵۰ گرمی پگاه
+              quantity: 3
+              quantityMeasuringUnit: unit
+              packageValue: 5589
+              createdAt: '2019-02-26 18:08:03'
+              updatedAt: '2019-02-26 18:08:03'
+            - pickedUpSequenceNumber: 1
+              dropOffSequenceNumber: 2
+              name: خامه صبحانه 125 میلی لیتری کاله
+              quantity: 2
+              quantityMeasuringUnit: unit
+              packageValue: 4800
+              createdAt: '2019-02-26 18:08:03'
+              updatedAt: '2019-02-26 18:08:03'
+            - pickedUpSequenceNumber: 1
+              dropOffSequenceNumber: 2
+              name: دسر طالبی ۱۰۰ گرمی دنت
+              quantity: 1
+              quantityMeasuringUnit: unit
+              packageValue: 1780
+              createdAt: '2019-02-26 18:08:03'
+              updatedAt: '2019-02-26 18:08:03'
+            - pickedUpSequenceNumber: 1
+              dropOffSequenceNumber: 2
+              name: پاپ کورن کچاپ فیلی 80 گرمی چی توز
+              quantity: 2
+              quantityMeasuringUnit: unit
+              packageValue: 3600
+              createdAt: '2019-02-26 18:08:03'
+              updatedAt: '2019-02-26 18:08:03'
+            - pickedUpSequenceNumber: 1
+              dropOffSequenceNumber: 2
+              name: حلوا ارده شکری ساده ۱۰۰ گرمی عقاب
+              quantity: 1
+              quantityMeasuringUnit: unit
+              packageValue: 3850
+              createdAt: '2019-02-26 18:08:03'
+              updatedAt: '2019-02-26 18:08:03'
+          orderDetails:
+            packageSize: 0.20000000000000001
+            city: tehran
+            deliveryCategory: bike
+            deliveryFarePaymentType: cod
+            isReturn: false
+            pricingId: 8e941a24-f17c-47d3-bae5-299f3113a240
+            sequenceNumberDeliveryCollection: 1
+            totalFare: 105000
+            customerRefId: 31
+            voucherCode:
+            waitingTime: 0
+          pickUpDetails:
+            - id:
+              contactName: مارکت سعادت
+              address: 'جردن '
+              contactPhoneNumber: 09376764602
+              plate: ''
+              sequenceNumber: 1
+              unit: ''
+              comment: ''
+              latitude: 35.784869
+              longitude: 51.376753999999998
+              type: pickup
+              collectCash: no
+              paymentType: prepaid
+              cashOnPickup: 0
+              cashOnDelivery: 0
+              isHub:
+              vendorId:
+          dropOffDetails:
+            - id:
+              contactName: نام تستی کانتکت
+              address: 'maghsad2 '
+              contactPhoneNumber: 09108986973
+              plate: ''
+              sequenceNumber: 2
+              unit: ''
+              comment: کامنت تستی
+              latitude: 35.706674
+              longitude: 51.364911999999997
+              type: drop
+              collectCash: no
+              paymentType: prepaid
+              cashOnPickup: 0
+              cashOnDelivery: 0
+              isHub:
+              vendorId:
+    Data:
+      title: Data
+      required:
+        - timeSlotDTO
+        - itemDetails
+        - orderDetails
+        - pickUpDetails
+        - dropOffDetails
+      type: object
+      properties:
+        timeSlotDTO:
+          $ref: '#/components/schemas/TimeSlotDTO'
+        itemDetails:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemDetail'
+          description: ''
+        orderDetails:
+          $ref: '#/components/schemas/OrderDetails'
+        pickUpDetails:
+          type: array
+          items:
+            $ref: '#/components/schemas/PickUpDetail'
+          description: ''
+        dropOffDetails:
+          type: array
+          items:
+            $ref: '#/components/schemas/DropOffDetail'
+          description: ''
+      example:
+        timeSlotDTO:
+          startTimeSlot: '2020-04-26 19:00:00'
+          endTimeSlot: '2020-04-26 23:26:00'
+        itemDetails:
+          - pickedUpSequenceNumber: 1
+            dropOffSequenceNumber: 2
+            name: کره پاستوریزه ۵۰ گرمی پگاه
+            quantity: 3
+            quantityMeasuringUnit: unit
+            packageValue: 5589
+            createdAt: '2019-02-26 18:08:03'
+            updatedAt: '2019-02-26 18:08:03'
+          - pickedUpSequenceNumber: 1
+            dropOffSequenceNumber: 2
+            name: خامه صبحانه 125 میلی لیتری کاله
+            quantity: 2
+            quantityMeasuringUnit: unit
+            packageValue: 4800
+            createdAt: '2019-02-26 18:08:03'
+            updatedAt: '2019-02-26 18:08:03'
+          - pickedUpSequenceNumber: 1
+            dropOffSequenceNumber: 2
+            name: دسر طالبی ۱۰۰ گرمی دنت
+            quantity: 1
+            quantityMeasuringUnit: unit
+            packageValue: 1780
+            createdAt: '2019-02-26 18:08:03'
+            updatedAt: '2019-02-26 18:08:03'
+          - pickedUpSequenceNumber: 1
+            dropOffSequenceNumber: 2
+            name: پاپ کورن کچاپ فیلی 80 گرمی چی توز
+            quantity: 2
+            quantityMeasuringUnit: unit
+            packageValue: 3600
+            createdAt: '2019-02-26 18:08:03'
+            updatedAt: '2019-02-26 18:08:03'
+          - pickedUpSequenceNumber: 1
+            dropOffSequenceNumber: 2
+            name: حلوا ارده شکری ساده ۱۰۰ گرمی عقاب
+            quantity: 1
+            quantityMeasuringUnit: unit
+            packageValue: 3850
+            createdAt: '2019-02-26 18:08:03'
+            updatedAt: '2019-02-26 18:08:03'
+        orderDetails:
+          packageSize: 0.20000000000000001
+          city: tehran
+          deliveryCategory: bike
+          deliveryFarePaymentType: cod
+          isReturn: false
+          pricingId: 8e941a24-f17c-47d3-bae5-299f3113a240
+          sequenceNumberDeliveryCollection: 1
+          totalFare: 105000
+          customerRefId: 31
+          voucherCode:
+          waitingTime: 0
+        pickUpDetails:
+          - id:
+            contactName: مارکت سعادت
+            address: 'جردن '
+            contactPhoneNumber: 09376764602
+            plate: ''
+            sequenceNumber: 1
+            unit: ''
+            comment: ''
+            latitude: 35.784869
+            longitude: 51.376753999999998
+            type: pickup
+            collectCash: no
+            paymentType: prepaid
+            cashOnPickup: 0
+            cashOnDelivery: 0
+            isHub:
+            vendorId:
+        dropOffDetails:
+          - id:
+            contactName: نام تستی کانتکت
+            address: 'maghsad2 '
+            contactPhoneNumber: 09108986973
+            plate: ''
+            sequenceNumber: 2
+            unit: ''
+            comment: کامنت تستی
+            latitude: 35.706674
+            longitude: 51.364911999999997
+            type: drop
+            collectCash: no
+            paymentType: prepaid
+            cashOnPickup: 0
+            cashOnDelivery: 0
+            isHub:
+            vendorId:
+    TimeSlotDTO:
+      title: TimeSlotDTO
+      required:
+        - startTimeSlot
+        - endTimeSlot
+      type: object
+      properties:
+        startTimeSlot:
+          type: string
+        endTimeSlot:
+          type: string
+      example:
+        startTimeSlot: '2020-04-26 19:00:00'
+        endTimeSlot: '2020-04-26 23:26:00'
+    ItemDetail:
+      title: ItemDetail
+      required:
+        - pickedUpSequenceNumber
+        - dropOffSequenceNumber
+        - name
+        - quantity
+        - quantityMeasuringUnit
+        - packageValue
+        - createdAt
+        - updatedAt
+      type: object
+      properties:
+        pickedUpSequenceNumber:
+          type: integer
+          format: int32
+        dropOffSequenceNumber:
+          type: integer
+          format: int32
+        name:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+        quantityMeasuringUnit:
+          type: string
+        packageValue:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      example:
+        pickedUpSequenceNumber: 1
+        dropOffSequenceNumber: 2
+        name: کره پاستوریزه ۵۰ گرمی پگاه
+        quantity: 3
+        quantityMeasuringUnit: unit
+        packageValue: 5589
+        createdAt: '2019-02-26 18:08:03'
+        updatedAt: '2019-02-26 18:08:03'
+    OrderDetails:
+      title: OrderDetails
+      required:
+        - packageSize
+        - city
+        - deliveryCategory
+        - deliveryFarePaymentType
+        - isReturn
+        - pricingId
+        - sequenceNumberDeliveryCollection
+        - totalFare
+        - customerRefId
+        - voucherCode
+        - waitingTime
+      type: object
+      properties:
+        packageSize:
+          type: number
+        city:
+          type: string
+        deliveryCategory:
+          type: string
+        deliveryFarePaymentType:
+          type: string
+        isReturn:
+          type: boolean
+        pricingId:
+          type: string
+        sequenceNumberDeliveryCollection:
+          type: integer
+          format: int32
+        totalFare:
+          type: integer
+          format: int32
+        customerRefId:
+          type: string
+        voucherCode:
+          type: string
+          nullable: true
+        waitingTime:
+          type: integer
+          format: int32
+      example:
+        packageSize: 0.20000000000000001
+        city: tehran
+        deliveryCategory: bike
+        deliveryFarePaymentType: cod
+        isReturn: false
+        pricingId: 8e941a24-f17c-47d3-bae5-299f3113a240
+        sequenceNumberDeliveryCollection: 1
+        totalFare: 105000
+        customerRefId: 31
+        voucherCode:
+        waitingTime: 0
+    PickUpDetail:
+      title: PickUpDetail
+      required:
+        - id
+        - contactName
+        - address
+        - contactPhoneNumber
+        - plate
+        - sequenceNumber
+        - unit
+        - comment
+        - latitude
+        - longitude
+        - type
+        - collectCash
+        - paymentType
+        - cashOnPickup
+        - cashOnDelivery
+        - isHub
+        - vendorId
+      type: object
+      properties:
+        id:
+          type: string
+          nullable: true
+        contactName:
+          type: string
+        address:
+          type: string
+        contactPhoneNumber:
+          type: string
+        plate:
+          type: string
+        sequenceNumber:
+          type: integer
+          format: int32
+        unit:
+          type: string
+        comment:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        type:
+          type: string
+        collectCash:
+          type: string
+        paymentType:
+          type: string
+        cashOnPickup:
+          type: integer
+          format: int32
+        cashOnDelivery:
+          type: integer
+          format: int32
+        isHub:
+          type: string
+          nullable: true
+        vendorId:
+          type: string
+          nullable: true
+      example:
+        id:
+        contactName: مارکت سعادت
+        address: 'جردن '
+        contactPhoneNumber: 09376764602
+        plate: ''
+        sequenceNumber: 1
+        unit: ''
+        comment: ''
+        latitude: 35.784869
+        longitude: 51.376753999999998
+        type: pickup
+        collectCash: no
+        paymentType: prepaid
+        cashOnPickup: 0
+        cashOnDelivery: 0
+        isHub:
+        vendorId:
+    DropOffDetail:
+      title: DropOffDetail
+      required:
+        - id
+        - contactName
+        - address
+        - contactPhoneNumber
+        - plate
+        - sequenceNumber
+        - unit
+        - comment
+        - latitude
+        - longitude
+        - type
+        - collectCash
+        - paymentType
+        - cashOnPickup
+        - cashOnDelivery
+        - isHub
+        - vendorId
+      type: object
+      properties:
+        id:
+          type: string
+          nullable: true
+        contactName:
+          type: string
+        address:
+          type: string
+        contactPhoneNumber:
+          type: string
+        plate:
+          type: string
+        sequenceNumber:
+          type: integer
+          format: int32
+        unit:
+          type: string
+        comment:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        type:
+          type: string
+        collectCash:
+          type: string
+        paymentType:
+          type: string
+        cashOnPickup:
+          type: integer
+          format: int32
+        cashOnDelivery:
+          type: integer
+          format: int32
+        isHub:
+          type: string
+          nullable: true
+        vendorId:
+          type: string
+          nullable: true
+      example:
+        id:
+        contactName: نام تستی کانتکت
+        address: 'maghsad2 '
+        contactPhoneNumber: 09108986973
+        plate: ''
+        sequenceNumber: 2
+        unit: ''
+        comment: کامنت تستی
+        latitude: 35.706674
+        longitude: 51.364911999999997
+        type: drop
+        collectCash: no
+        paymentType: prepaid
+        cashOnPickup: 0
+        cashOnDelivery: 0
+        isHub:
+        vendorId:
+    CreateOrder:
+      title: CreateOrder
+      required:
+        - status_code
+        - data
+        - api_status
+        - message
+        - key
+      type: object
+      properties:
+        status_code:
+          type: string
+        data:
+          $ref: '#/components/schemas/Data1'
+        api_status:
+          type: string
+        message:
+          type: string
+        key:
+          type: string
+      example:
+        status_code: 201
+        data:
+          orderId: 1422
+        api_status: success
+        message: Order created succesfully.
+        key: ORDER_CREATED
+    Data1:
+      title: Data1
+      required:
+        - orderId
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int32
+      example:
+        orderId: 1422
+    CancelOrderRequest:
+      title: CancelOrderRequest
+      required:
+        - orderId
+      type: object
+      properties:
+        orderId:
+          type: string
+      example:
+        orderId: string
+    CancelOrder:
+      title: CancelOrder
+      required:
+        - status_code
+        - data
+        - api_status
+        - message
+        - key
+      type: object
+      properties:
+        status_code:
+          type: string
+        data:
+          type: string
+          nullable: true
+        api_status:
+          type: string
+        message:
+          type: string
+        key:
+          type: string
+      example:
+        status_code: 200
+        data:
+        api_status: success
+        message: Cancellation successful
+        key: CANCEL_SUCCESS
+    GetOrderListRequest:
+      title: GetOrderListRequest
+      required:
+        - ongoing
+        - pageNumber
+        - pageSize
+      type: object
+      properties:
+        ongoing:
+          type: boolean
+        pageNumber:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+      example:
+        ongoing: true
+        pageNumber: 1
+        pageSize: 5
+    GetOrderList:
+      title: GetOrderList
+      required:
+        - orderList
+        - totalPageCount
+      type: object
+      properties:
+        orderList:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderList'
+          description: ''
+        totalPageCount:
+          type: integer
+          format: int32
+      example:
+        orderList:
+          - id: 1406
+            customerId: 1
+            customerName: Test
+            customerPhonenumber: 9852123654
+            customerRefId: 129
+            customerEmail: test@test.com
+            status: PENDING
+            rating:
+            ratingComment:
+            cancelledBy:
+            cancelledAt:
+            bikerDeliveryFare: 1000
+            customerDeliveryFare: 1000
+            bikerRateChartId: 3
+            customerRateChartId: 3
+            bikerPricingConfigId: 3
+            customerPricingConfigId: 3
+            deliveryFarePaymentType: prepaid
+            customerWalletId: 2
+            sequenceNumberDeliveryCollection:
+            isCancellable: false
+            isDeniable: false
+            city: tehran
+            deliveryCategory: bike
+            isReturn: false
+            items:
+              - id: 2804
+                name: تست کباب
+                quantity: 1
+                quantityMeasuringUnit: unit
+                status:
+                statusReason:
+                packageValue: 13000
+                pickedUpSequenceNumber:
+                dropOffSequenceNumber:
+                createdAt: '2018-04-10 11:57:52'
+                updatedAt: '2018-04-10 11:57:52'
+            allotments: []
+            terminals:
+              - id: 2968
+                latitude: 35.773311999999997
+                longitude: 51.4183466
+                unit:
+                address: فقط برای تست است
+                plate: ''
+                landmark: فقط برای تست است
+                comment: descripttion
+                contactName: تست اول
+                contactPhoneNumber: 2188198740
+                email: ''
+                packageHandlerName:
+                packageHandlerSignatureUrl:
+                packageHandlerRelation:
+                sequenceNumber: 1
+                type: pickup
+                status: PENDING
+                arrivedPickupAt:
+                pickedUpAt:
+                arrivedDropOffAt:
+                deliveredAt:
+                paymentType: prepaid
+                cashOnPickup: 0
+                cashOnDelivery: 0
+                pickedUpItems:
+                  - id: 2804
+                    name: تست کباب
+                    quantity: 1
+                    quantityMeasuringUnit: unit
+                    status:
+                    statusReason:
+                    packageValue: 13000
+                    pickedUpSequenceNumber:
+                    dropOffSequenceNumber:
+                    createdAt: '2018-04-10 11:57:52'
+                    updatedAt: '2018-04-10 11:57:52'
+                droppedOffItems: []
+                createdAt: '2018-04-10 11:57:52'
+                updatedAt: '2018-04-10 11:57:52'
+                rating:
+                ratingComments:
+              - id: 2969
+                latitude: 35.767984499999997
+                longitude: 51.430362899999999
+                unit:
+                address: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                plate: ''
+                landmark: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                comment: descripttion
+                contactName: امیر  مدرسی
+                contactPhoneNumber: 09357896521
+                email: ''
+                packageHandlerName:
+                packageHandlerSignatureUrl:
+                packageHandlerRelation:
+                sequenceNumber: 2
+                type: drop
+                status: PENDING
+                arrivedPickupAt:
+                pickedUpAt:
+                arrivedDropOffAt:
+                deliveredAt:
+                paymentType: prepaid
+                cashOnPickup: 0
+                cashOnDelivery: 0
+                pickedUpItems: []
+                droppedOffItems:
+                  - id: 2804
+                    name: تست کباب
+                    quantity: 1
+                    quantityMeasuringUnit: unit
+                    status:
+                    statusReason:
+                    packageValue: 13000
+                    pickedUpSequenceNumber:
+                    dropOffSequenceNumber:
+                    createdAt: '2018-04-10 11:57:52'
+                    updatedAt: '2018-04-10 11:57:52'
+                createdAt: '2018-04-10 11:57:52'
+                updatedAt: '2018-04-10 11:57:52'
+                rating:
+                ratingComments:
+            createdAt: '2018-04-10 11:57:52'
+            updatedAt: '2018-04-10 11:57:52'
+          - id: 1400
+            customerId: 1
+            customerName: Test
+            customerPhonenumber: 9852123654
+            customerRefId: 127
+            customerEmail: test@test.com
+            status: PENDING
+            rating:
+            ratingComment:
+            cancelledBy:
+            cancelledAt:
+            bikerDeliveryFare: 1000
+            customerDeliveryFare: 1000
+            bikerRateChartId: 3
+            customerRateChartId: 3
+            bikerPricingConfigId: 3
+            customerPricingConfigId: 3
+            deliveryFarePaymentType: prepaid
+            customerWalletId: 2
+            sequenceNumberDeliveryCollection:
+            isCancellable: false
+            isDeniable: false
+            city: tehran
+            deliveryCategory: bike
+            isReturn: false
+            items:
+              - id: 2794
+                name: تست کباب
+                quantity: 1
+                quantityMeasuringUnit: unit
+                status:
+                statusReason:
+                packageValue: 13000
+                pickedUpSequenceNumber:
+                dropOffSequenceNumber:
+                createdAt: '2018-04-10 05:42:44'
+                updatedAt: '2018-04-10 05:42:44'
+            allotments: []
+            terminals:
+              - id: 2952
+                latitude: 35.773311999999997
+                longitude: 51.4183466
+                unit:
+                address: فقط برای تست است
+                plate: ''
+                landmark: فقط برای تست است
+                comment: descripttion
+                contactName: تست اول
+                contactPhoneNumber: 2188198740
+                email: ''
+                packageHandlerName:
+                packageHandlerSignatureUrl:
+                packageHandlerRelation:
+                sequenceNumber: 1
+                type: pickup
+                status: PENDING
+                arrivedPickupAt:
+                pickedUpAt:
+                arrivedDropOffAt:
+                deliveredAt:
+                paymentType: prepaid
+                cashOnPickup: 0
+                cashOnDelivery: 0
+                pickedUpItems:
+                  - id: 2794
+                    name: تست کباب
+                    quantity: 1
+                    quantityMeasuringUnit: unit
+                    status:
+                    statusReason:
+                    packageValue: 13000
+                    pickedUpSequenceNumber:
+                    dropOffSequenceNumber:
+                    createdAt: '2018-04-10 05:42:44'
+                    updatedAt: '2018-04-10 05:42:44'
+                droppedOffItems: []
+                createdAt: '2018-04-10 05:42:44'
+                updatedAt: '2018-04-10 05:42:44'
+                rating:
+                ratingComments:
+              - id: 2953
+                latitude: 35.767984499999997
+                longitude: 51.430362899999999
+                unit:
+                address: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                plate: ''
+                landmark: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                comment: descripttion
+                contactName: امیر  مدرسی
+                contactPhoneNumber: 09357896521
+                email: ''
+                packageHandlerName:
+                packageHandlerSignatureUrl:
+                packageHandlerRelation:
+                sequenceNumber: 2
+                type: drop
+                status: PENDING
+                arrivedPickupAt:
+                pickedUpAt:
+                arrivedDropOffAt:
+                deliveredAt:
+                paymentType: prepaid
+                cashOnPickup: 0
+                cashOnDelivery: 0
+                pickedUpItems: []
+                droppedOffItems:
+                  - id: 2794
+                    name: تست کباب
+                    quantity: 1
+                    quantityMeasuringUnit: unit
+                    status:
+                    statusReason:
+                    packageValue: 13000
+                    pickedUpSequenceNumber:
+                    dropOffSequenceNumber:
+                    createdAt: '2018-04-10 05:42:44'
+                    updatedAt: '2018-04-10 05:42:44'
+                createdAt: '2018-04-10 05:42:44'
+                updatedAt: '2018-04-10 05:42:44'
+                rating:
+                ratingComments:
+            createdAt: '2018-04-10 05:42:44'
+            updatedAt: '2018-04-10 05:42:44'
+          - id: 1399
+            customerId: 1
+            customerName: Test
+            customerPhonenumber: 9852123654
+            customerRefId: 126
+            customerEmail: test@test.com
+            status: PENDING
+            rating:
+            ratingComment:
+            cancelledBy:
+            cancelledAt:
+            bikerDeliveryFare: 1000
+            customerDeliveryFare: 1000
+            bikerRateChartId: 3
+            customerRateChartId: 3
+            bikerPricingConfigId: 3
+            customerPricingConfigId: 3
+            deliveryFarePaymentType: prepaid
+            customerWalletId: 2
+            sequenceNumberDeliveryCollection:
+            isCancellable: false
+            isDeniable: false
+            city: tehran
+            deliveryCategory: bike
+            isReturn: false
+            items:
+              - id: 2793
+                name: تست کباب
+                quantity: 1
+                quantityMeasuringUnit: unit
+                status:
+                statusReason:
+                packageValue: 13000
+                pickedUpSequenceNumber:
+                dropOffSequenceNumber:
+                createdAt: '2018-04-10 05:42:15'
+                updatedAt: '2018-04-10 05:42:15'
+            allotments: []
+            terminals:
+              - id: 2950
+                latitude: 35.773311999999997
+                longitude: 51.4183466
+                unit:
+                address: فقط برای تست است
+                plate: ''
+                landmark: فقط برای تست است
+                comment: descripttion
+                contactName: تست اول
+                contactPhoneNumber: 2188198740
+                email: ''
+                packageHandlerName:
+                packageHandlerSignatureUrl:
+                packageHandlerRelation:
+                sequenceNumber: 1
+                type: pickup
+                status: PENDING
+                arrivedPickupAt:
+                pickedUpAt:
+                arrivedDropOffAt:
+                deliveredAt:
+                paymentType: prepaid
+                cashOnPickup: 0
+                cashOnDelivery: 0
+                pickedUpItems:
+                  - id: 2793
+                    name: تست کباب
+                    quantity: 1
+                    quantityMeasuringUnit: unit
+                    status:
+                    statusReason:
+                    packageValue: 13000
+                    pickedUpSequenceNumber:
+                    dropOffSequenceNumber:
+                    createdAt: '2018-04-10 05:42:15'
+                    updatedAt: '2018-04-10 05:42:15'
+                droppedOffItems: []
+                createdAt: '2018-04-10 05:42:15'
+                updatedAt: '2018-04-10 05:42:15'
+                rating:
+                ratingComments:
+              - id: 2951
+                latitude: 35.767984499999997
+                longitude: 51.430362899999999
+                unit:
+                address: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                plate: ''
+                landmark: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                comment: descripttion
+                contactName: امیر  مدرسی
+                contactPhoneNumber: 09357896521
+                email: ''
+                packageHandlerName:
+                packageHandlerSignatureUrl:
+                packageHandlerRelation:
+                sequenceNumber: 2
+                type: drop
+                status: PENDING
+                arrivedPickupAt:
+                pickedUpAt:
+                arrivedDropOffAt:
+                deliveredAt:
+                paymentType: prepaid
+                cashOnPickup: 0
+                cashOnDelivery: 0
+                pickedUpItems: []
+                droppedOffItems:
+                  - id: 2793
+                    name: تست کباب
+                    quantity: 1
+                    quantityMeasuringUnit: unit
+                    status:
+                    statusReason:
+                    packageValue: 13000
+                    pickedUpSequenceNumber:
+                    dropOffSequenceNumber:
+                    createdAt: '2018-04-10 05:42:15'
+                    updatedAt: '2018-04-10 05:42:15'
+                createdAt: '2018-04-10 05:42:15'
+                updatedAt: '2018-04-10 05:42:15'
+                rating:
+                ratingComments:
+            createdAt: '2018-04-10 05:42:15'
+            updatedAt: '2018-04-10 05:42:15'
+          - id: 1398
+            customerId: 1
+            customerName: Test
+            customerPhonenumber: 9852123654
+            customerRefId: 125
+            customerEmail: test@test.com
+            status: PENDING
+            rating:
+            ratingComment:
+            cancelledBy:
+            cancelledAt:
+            bikerDeliveryFare: 1000
+            customerDeliveryFare: 1000
+            bikerRateChartId: 3
+            customerRateChartId: 3
+            bikerPricingConfigId: 3
+            customerPricingConfigId: 3
+            deliveryFarePaymentType: prepaid
+            customerWalletId: 2
+            sequenceNumberDeliveryCollection:
+            isCancellable: false
+            isDeniable: false
+            city: tehran
+            deliveryCategory: bike
+            isReturn: false
+            items:
+              - id: 2792
+                name: تست کباب
+                quantity: 1
+                quantityMeasuringUnit: unit
+                status:
+                statusReason:
+                packageValue: 13000
+                pickedUpSequenceNumber:
+                dropOffSequenceNumber:
+                createdAt: '2018-04-10 05:25:22'
+                updatedAt: '2018-04-10 05:25:22'
+            allotments: []
+            terminals:
+              - id: 2948
+                latitude: 35.773311999999997
+                longitude: 51.4183466
+                unit:
+                address: فقط برای تست است
+                plate: ''
+                landmark: فقط برای تست است
+                comment: descripttion
+                contactName: تست اول
+                contactPhoneNumber: 2188198740
+                email: ''
+                packageHandlerName:
+                packageHandlerSignatureUrl:
+                packageHandlerRelation:
+                sequenceNumber: 1
+                type: pickup
+                status: PENDING
+                arrivedPickupAt:
+                pickedUpAt:
+                arrivedDropOffAt:
+                deliveredAt:
+                paymentType: prepaid
+                cashOnPickup: 0
+                cashOnDelivery: 0
+                pickedUpItems:
+                  - id: 2792
+                    name: تست کباب
+                    quantity: 1
+                    quantityMeasuringUnit: unit
+                    status:
+                    statusReason:
+                    packageValue: 13000
+                    pickedUpSequenceNumber:
+                    dropOffSequenceNumber:
+                    createdAt: '2018-04-10 05:25:22'
+                    updatedAt: '2018-04-10 05:25:22'
+                droppedOffItems: []
+                createdAt: '2018-04-10 05:25:22'
+                updatedAt: '2018-04-10 05:25:22'
+                rating:
+                ratingComments:
+              - id: 2949
+                latitude: 35.767984499999997
+                longitude: 51.430362899999999
+                unit:
+                address: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                plate: ''
+                landmark: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                comment: descripttion
+                contactName: امیر  مدرسی
+                contactPhoneNumber: 09357896521
+                email: ''
+                packageHandlerName:
+                packageHandlerSignatureUrl:
+                packageHandlerRelation:
+                sequenceNumber: 2
+                type: drop
+                status: PENDING
+                arrivedPickupAt:
+                pickedUpAt:
+                arrivedDropOffAt:
+                deliveredAt:
+                paymentType: prepaid
+                cashOnPickup: 0
+                cashOnDelivery: 0
+                pickedUpItems: []
+                droppedOffItems:
+                  - id: 2792
+                    name: تست کباب
+                    quantity: 1
+                    quantityMeasuringUnit: unit
+                    status:
+                    statusReason:
+                    packageValue: 13000
+                    pickedUpSequenceNumber:
+                    dropOffSequenceNumber:
+                    createdAt: '2018-04-10 05:25:22'
+                    updatedAt: '2018-04-10 05:25:22'
+                createdAt: '2018-04-10 05:25:22'
+                updatedAt: '2018-04-10 05:25:22'
+                rating:
+                ratingComments:
+            createdAt: '2018-04-10 05:25:22'
+            updatedAt: '2018-04-10 05:25:22'
+          - id: 1397
+            customerId: 1
+            customerName: Test
+            customerPhonenumber: 9852123654
+            customerRefId: 124
+            customerEmail: test@test.com
+            status: PENDING
+            rating:
+            ratingComment:
+            cancelledBy:
+            cancelledAt:
+            bikerDeliveryFare: 1000
+            customerDeliveryFare: 1000
+            bikerRateChartId: 3
+            customerRateChartId: 3
+            bikerPricingConfigId: 3
+            customerPricingConfigId: 3
+            deliveryFarePaymentType: prepaid
+            customerWalletId: 2
+            sequenceNumberDeliveryCollection:
+            isCancellable: false
+            isDeniable: false
+            city: tehran
+            deliveryCategory: bike
+            isReturn: false
+            items:
+              - id: 2791
+                name: تست کباب
+                quantity: 1
+                quantityMeasuringUnit: unit
+                status:
+                statusReason:
+                packageValue: 13000
+                pickedUpSequenceNumber:
+                dropOffSequenceNumber:
+                createdAt: '2018-04-10 05:19:57'
+                updatedAt: '2018-04-10 05:19:57'
+            allotments: []
+            terminals:
+              - id: 2946
+                latitude: 35.773311999999997
+                longitude: 51.4183466
+                unit:
+                address: فقط برای تست است
+                plate: ''
+                landmark: فقط برای تست است
+                comment: descripttion
+                contactName: تست اول
+                contactPhoneNumber: 2188198740
+                email: ''
+                packageHandlerName:
+                packageHandlerSignatureUrl:
+                packageHandlerRelation:
+                sequenceNumber: 1
+                type: pickup
+                status: PENDING
+                arrivedPickupAt:
+                pickedUpAt:
+                arrivedDropOffAt:
+                deliveredAt:
+                paymentType: prepaid
+                cashOnPickup: 0
+                cashOnDelivery: 0
+                pickedUpItems:
+                  - id: 2791
+                    name: تست کباب
+                    quantity: 1
+                    quantityMeasuringUnit: unit
+                    status:
+                    statusReason:
+                    packageValue: 13000
+                    pickedUpSequenceNumber:
+                    dropOffSequenceNumber:
+                    createdAt: '2018-04-10 05:19:57'
+                    updatedAt: '2018-04-10 05:19:57'
+                droppedOffItems: []
+                createdAt: '2018-04-10 05:19:57'
+                updatedAt: '2018-04-10 05:19:57'
+                rating:
+                ratingComments:
+              - id: 2947
+                latitude: 35.767984499999997
+                longitude: 51.430362899999999
+                unit:
+                address: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                plate: ''
+                landmark: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+                comment: descripttion
+                contactName: امیر  مدرسی
+                contactPhoneNumber: 09357896521
+                email: ''
+                packageHandlerName:
+                packageHandlerSignatureUrl:
+                packageHandlerRelation:
+                sequenceNumber: 2
+                type: drop
+                status: PENDING
+                arrivedPickupAt:
+                pickedUpAt:
+                arrivedDropOffAt:
+                deliveredAt:
+                paymentType: prepaid
+                cashOnPickup: 0
+                cashOnDelivery: 0
+                pickedUpItems: []
+                droppedOffItems:
+                  - id: 2791
+                    name: تست کباب
+                    quantity: 1
+                    quantityMeasuringUnit: unit
+                    status:
+                    statusReason:
+                    packageValue: 13000
+                    pickedUpSequenceNumber:
+                    dropOffSequenceNumber:
+                    createdAt: '2018-04-10 05:19:57'
+                    updatedAt: '2018-04-10 05:19:57'
+                createdAt: '2018-04-10 05:19:57'
+                updatedAt: '2018-04-10 05:19:57'
+                rating:
+                ratingComments:
+            createdAt: '2018-04-10 05:19:57'
+            updatedAt: '2018-04-10 05:19:57'
+        totalPageCount: 20
+    OrderList:
+      title: OrderList
+      required:
+        - id
+        - customerName
+        - customerPhonenumber
+        - customerRefId
+        - customerEmail
+        - status
+        - rating
+        - ratingComment
+        - cancelledBy
+        - cancelledAt
+        - bikerDeliveryFare
+        - customerDeliveryFare
+        - bikerRateChartId
+        - customerRateChartId
+        - bikerPricingConfigId
+        - customerPricingConfigId
+        - deliveryFarePaymentType
+        - customerWalletId
+        - sequenceNumberDeliveryCollection
+        - isCancellable
+        - isDeniable
+        - city
+        - deliveryCategory
+        - isReturn
+        - items
+        - allotments
+        - terminals
+        - createdAt
+        - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        customerId:
+          type: integer
+          format: int32
+        customerName:
+          type: string
+        customerPhonenumber:
+          type: string
+        customerRefId:
+          type: string
+        customerEmail:
+          type: string
+        status:
+          type: string
+        rating:
+          type: string
+          nullable: true
+        ratingComment:
+          type: string
+          nullable: true
+        cancelledBy:
+          type: string
+          nullable: true
+        cancelledAt:
+          type: string
+          nullable: true
+        bikerDeliveryFare:
+          type: integer
+          format: int32
+        customerDeliveryFare:
+          type: integer
+          format: int32
+        bikerRateChartId:
+          type: integer
+          format: int32
+        customerRateChartId:
+          type: integer
+          format: int32
+        bikerPricingConfigId:
+          type: integer
+          format: int32
+        customerPricingConfigId:
+          type: integer
+          format: int32
+        deliveryFarePaymentType:
+          type: string
+        customerWalletId:
+          type: integer
+          format: int32
+        sequenceNumberDeliveryCollection:
+          type: string
+          nullable: true
+        isCancellable:
+          type: boolean
+        isDeniable:
+          type: boolean
+        city:
+          type: string
+        deliveryCategory:
+          type: string
+        isReturn:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+          description: ''
+        allotments:
+          type: array
+          items:
+            type: string
+          description: ''
+        terminals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Terminal'
+          description: ''
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      example:
+        id: 1406
+        customerId: 1
+        customerName: Test
+        customerPhonenumber: 9852123654
+        customerRefId: 129
+        customerEmail: test@test.com
+        status: PENDING
+        rating:
+        ratingComment:
+        cancelledBy:
+        cancelledAt:
+        bikerDeliveryFare: 1000
+        customerDeliveryFare: 1000
+        bikerRateChartId: 3
+        customerRateChartId: 3
+        bikerPricingConfigId: 3
+        customerPricingConfigId: 3
+        deliveryFarePaymentType: prepaid
+        customerWalletId: 2
+        sequenceNumberDeliveryCollection:
+        isCancellable: false
+        isDeniable: false
+        city: tehran
+        deliveryCategory: bike
+        isReturn: false
+        items:
+          - id: 2804
+            name: تست کباب
+            quantity: 1
+            quantityMeasuringUnit: unit
+            status:
+            statusReason:
+            packageValue: 13000
+            pickedUpSequenceNumber:
+            dropOffSequenceNumber:
+            createdAt: '2018-04-10 11:57:52'
+            updatedAt: '2018-04-10 11:57:52'
+        allotments: []
+        terminals:
+          - id: 2968
+            latitude: 35.773311999999997
+            longitude: 51.4183466
+            unit:
+            address: فقط برای تست است
+            plate: ''
+            landmark: فقط برای تست است
+            comment: descripttion
+            contactName: تست اول
+            contactPhoneNumber: 2188198740
+            email: ''
+            packageHandlerName:
+            packageHandlerSignatureUrl:
+            packageHandlerRelation:
+            sequenceNumber: 1
+            type: pickup
+            status: PENDING
+            arrivedPickupAt:
+            pickedUpAt:
+            arrivedDropOffAt:
+            deliveredAt:
+            paymentType: prepaid
+            cashOnPickup: 0
+            cashOnDelivery: 0
+            pickedUpItems:
+              - id: 2804
+                name: تست کباب
+                quantity: 1
+                quantityMeasuringUnit: unit
+                status:
+                statusReason:
+                packageValue: 13000
+                pickedUpSequenceNumber:
+                dropOffSequenceNumber:
+                createdAt: '2018-04-10 11:57:52'
+                updatedAt: '2018-04-10 11:57:52'
+            droppedOffItems: []
+            createdAt: '2018-04-10 11:57:52'
+            updatedAt: '2018-04-10 11:57:52'
+            rating:
+            ratingComments:
+          - id: 2969
+            latitude: 35.767984499999997
+            longitude: 51.430362899999999
+            unit:
+            address: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+            plate: ''
+            landmark: آدرس تستی جهت تست نرم افزار. لطفا پیک نکنید.
+            comment: descripttion
+            contactName: امیر  مدرسی
+            contactPhoneNumber: 09357896521
+            email: ''
+            packageHandlerName:
+            packageHandlerSignatureUrl:
+            packageHandlerRelation:
+            sequenceNumber: 2
+            type: drop
+            status: PENDING
+            arrivedPickupAt:
+            pickedUpAt:
+            arrivedDropOffAt:
+            deliveredAt:
+            paymentType: prepaid
+            cashOnPickup: 0
+            cashOnDelivery: 0
+            pickedUpItems: []
+            droppedOffItems:
+              - id: 2804
+                name: تست کباب
+                quantity: 1
+                quantityMeasuringUnit: unit
+                status:
+                statusReason:
+                packageValue: 13000
+                pickedUpSequenceNumber:
+                dropOffSequenceNumber:
+                createdAt: '2018-04-10 11:57:52'
+                updatedAt: '2018-04-10 11:57:52'
+            createdAt: '2018-04-10 11:57:52'
+            updatedAt: '2018-04-10 11:57:52'
+            rating:
+            ratingComments:
+        createdAt: '2018-04-10 11:57:52'
+        updatedAt: '2018-04-10 11:57:52'
+    Item:
+      title: Item
+      required:
+        - id
+        - name
+        - quantity
+        - quantityMeasuringUnit
+        - status
+        - statusReason
+        - packageValue
+        - pickedUpSequenceNumber
+        - dropOffSequenceNumber
+        - createdAt
+        - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+        quantityMeasuringUnit:
+          type: string
+        status:
+          type: string
+          nullable: true
+        statusReason:
+          type: string
+          nullable: true
+        packageValue:
+          type: integer
+          format: int32
+        pickedUpSequenceNumber:
+          type: string
+          nullable: true
+        dropOffSequenceNumber:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      example:
+        id: 2804
+        name: تست کباب
+        quantity: 1
+        quantityMeasuringUnit: unit
+        status:
+        statusReason:
+        packageValue: 13000
+        pickedUpSequenceNumber:
+        dropOffSequenceNumber:
+        createdAt: '2018-04-10 11:57:52'
+        updatedAt: '2018-04-10 11:57:52'
+    Terminal:
+      title: Terminal
+      required:
+        - id
+        - latitude
+        - longitude
+        - unit
+        - address
+        - plate
+        - landmark
+        - comment
+        - contactName
+        - contactPhoneNumber
+        - email
+        - packageHandlerName
+        - packageHandlerSignatureUrl
+        - packageHandlerRelation
+        - sequenceNumber
+        - type
+        - status
+        - arrivedPickupAt
+        - pickedUpAt
+        - arrivedDropOffAt
+        - deliveredAt
+        - paymentType
+        - cashOnPickup
+        - cashOnDelivery
+        - pickedUpItems
+        - droppedOffItems
+        - createdAt
+        - updatedAt
+        - rating
+        - ratingComments
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        latitude:
+          type: number
+        longitude:
+          type: number
+        unit:
+          type: string
+          nullable: true
+        address:
+          type: string
+        plate:
+          type: string
+        landmark:
+          type: string
+        comment:
+          type: string
+        contactName:
+          type: string
+        contactPhoneNumber:
+          type: string
+        email:
+          type: string
+        packageHandlerName:
+          type: string
+          nullable: true
+        packageHandlerSignatureUrl:
+          type: string
+          nullable: true
+        packageHandlerRelation:
+          type: string
+          nullable: true
+        sequenceNumber:
+          type: integer
+          format: int32
+        type:
+          type: string
+        status:
+          type: string
+        arrivedPickupAt:
+          type: string
+          nullable: true
+        pickedUpAt:
+          type: string
+          nullable: true
+        arrivedDropOffAt:
+          type: string
+          nullable: true
+        deliveredAt:
+          type: string
+          nullable: true
+        paymentType:
+          type: string
+        cashOnPickup:
+          type: integer
+          format: int32
+        cashOnDelivery:
+          type: integer
+          format: int32
+        pickedUpItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/PickedUpItem'
+          description: ''
+        droppedOffItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/DroppedOffItem'
+          description: ''
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        rating:
+          type: string
+          nullable: true
+        ratingComments:
+          type: string
+          nullable: true
+      example:
+        id: 2968
+        latitude: 35.773311999999997
+        longitude: 51.4183466
+        unit:
+        address: فقط برای تست است
+        plate: ''
+        landmark: فقط برای تست است
+        comment: descripttion
+        contactName: تست اول
+        contactPhoneNumber: 2188198740
+        email: ''
+        packageHandlerName:
+        packageHandlerSignatureUrl:
+        packageHandlerRelation:
+        sequenceNumber: 1
+        type: pickup
+        status: PENDING
+        arrivedPickupAt:
+        pickedUpAt:
+        arrivedDropOffAt:
+        deliveredAt:
+        paymentType: prepaid
+        cashOnPickup: 0
+        cashOnDelivery: 0
+        pickedUpItems:
+          - id: 2804
+            name: تست کباب
+            quantity: 1
+            quantityMeasuringUnit: unit
+            status:
+            statusReason:
+            packageValue: 13000
+            pickedUpSequenceNumber:
+            dropOffSequenceNumber:
+            createdAt: '2018-04-10 11:57:52'
+            updatedAt: '2018-04-10 11:57:52'
+        droppedOffItems: []
+        createdAt: '2018-04-10 11:57:52'
+        updatedAt: '2018-04-10 11:57:52'
+        rating:
+        ratingComments:
+    PickedUpItem:
+      title: PickedUpItem
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+        quantityMeasuringUnit:
+          type: string
+        status:
+          type: string
+          nullable: true
+        statusReason:
+          type: string
+          nullable: true
+        packageValue:
+          type: integer
+          format: int32
+        pickedUpSequenceNumber:
+          type: string
+          nullable: true
+        dropOffSequenceNumber:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      example:
+        id: 2804
+        name: تست کباب
+        quantity: 1
+        quantityMeasuringUnit: unit
+        status:
+        statusReason:
+        packageValue: 13000
+        pickedUpSequenceNumber:
+        dropOffSequenceNumber:
+        createdAt: '2018-04-10 11:57:52'
+        updatedAt: '2018-04-10 11:57:52'
+    DroppedOffItem:
+      title: DroppedOffItem
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+        quantityMeasuringUnit:
+          type: string
+        status:
+          type: string
+          nullable: true
+        statusReason:
+          type: string
+          nullable: true
+        packageValue:
+          type: integer
+          format: int32
+        pickedUpSequenceNumber:
+          type: string
+          nullable: true
+        dropOffSequenceNumber:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+    GetPriceRequest:
+      title: GetPriceRequest
+      required:
+        - city
+        - deliveryCategory
+        - deliveryFarePaymentType
+        - isReturn
+        - pricingId
+        - sequenceNumberDeliveryCollection
+        - totalFare
+        - voucherCode
+        - waitingTime
+        - customerWalletType
+        - terminals
+        - id
+      type: object
+      properties:
+        city:
+          type: string
+        deliveryCategory:
+          type: string
+        deliveryFarePaymentType:
+          type: string
+        isReturn:
+          type: boolean
+        pricingId:
+          type: string
+          nullable: true
+        sequenceNumberDeliveryCollection:
+          type: integer
+          format: int32
+        totalFare:
+          type: string
+          nullable: true
+        voucherCode:
+          type: string
+          nullable: true
+        waitingTime:
+          type: integer
+          format: int32
+        customerWalletType:
+          type: string
+        terminals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Terminal1'
+          description: ''
+        id:
+          type: string
+          nullable: true
+      example:
+        city: tehran
+        deliveryCategory: bike-without-box
+        deliveryFarePaymentType: prepaid
+        isReturn: false
+        pricingId:
+        sequenceNumberDeliveryCollection: 1
+        totalFare:
+        voucherCode:
+        waitingTime: 0
+        customerWalletType: SNAPP_BOX
+        terminals:
+          - id:
+            contactName: Kiana Ahmadi
+            address: تهران، محله شیخ هادی (انقلاب -فلسطين)، حافظ
+            contactPhoneNumber: 09195428658
+            plate: ''
+            sequenceNumber: 1
+            unit: ''
+            comment: ''
+            latitude: 35.698083140000051
+            longitude: 51.411552429199226
+            type: pickup
+            collectCash: no
+            paymentType: prepaid
+            cashOnPickup: 0
+            cashOnDelivery: 0
+            isHub:
+            vendorId:
+          - id:
+            contactName: ''
+            address: تهران، محله شیخ هادی (انقلاب -فلسطين)، حافظ
+            contactPhoneNumber: ''
+            plate: ''
+            sequenceNumber: 2
+            unit: ''
+            comment: ''
+            latitude: 35.698083140000051
+            longitude: 51.412582397460945
+            type: drop
+            collectCash: no
+            paymentType: prepaid
+            cashOnPickup: 0
+            cashOnDelivery: 0
+            isHub:
+            vendorId:
+        id:
+    Terminal1:
+      title: Terminal1
+      required:
+        - id
+        - contactName
+        - address
+        - contactPhoneNumber
+        - plate
+        - sequenceNumber
+        - unit
+        - comment
+        - latitude
+        - longitude
+        - type
+        - collectCash
+        - paymentType
+        - cashOnPickup
+        - cashOnDelivery
+        - isHub
+        - vendorId
+      type: object
+      properties:
+        id:
+          type: string
+          nullable: true
+        contactName:
+          type: string
+        address:
+          type: string
+        contactPhoneNumber:
+          type: string
+        plate:
+          type: string
+        sequenceNumber:
+          type: integer
+          format: int32
+        unit:
+          type: string
+        comment:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        type:
+          type: string
+        collectCash:
+          type: string
+        paymentType:
+          type: string
+        cashOnPickup:
+          type: integer
+          format: int32
+        cashOnDelivery:
+          type: integer
+          format: int32
+        isHub:
+          type: string
+          nullable: true
+        vendorId:
+          type: string
+          nullable: true
+      example:
+        id:
+        contactName: Kiana Ahmadi
+        address: تهران، محله شیخ هادی (انقلاب -فلسطين)، حافظ
+        contactPhoneNumber: 09195428658
+        plate: ''
+        sequenceNumber: 1
+        unit: ''
+        comment: ''
+        latitude: 35.698083140000051
+        longitude: 51.411552429199226
+        type: pickup
+        collectCash: no
+        paymentType: prepaid
+        cashOnPickup: 0
+        cashOnDelivery: 0
+        isHub:
+        vendorId:
+    GetPrice:
+      title: GetPrice
+      required:
+        - rateChartId
+        - pricingConfigId
+        - distanceCharged
+        - terminalsCharged
+        - timeFactor
+        - totalFare
+        - pricingId
+      type: object
+      properties:
+        rateChartId:
+          type: integer
+          format: int32
+        pricingConfigId:
+          type: integer
+          format: int32
+        distanceCharged:
+          type: integer
+          format: int32
+        terminalsCharged:
+          type: integer
+          format: int32
+        timeFactor:
+          type: integer
+          format: int32
+        totalFare:
+          type: integer
+          format: int32
+        pricingId:
+          type: string
+      example:
+        rateChartId: 1
+        pricingConfigId: 1
+        distanceCharged: 0
+        terminalsCharged: 2
+        timeFactor: 1
+        totalFare: 70000
+        pricingId: 37ee6d99-c6f8-47bf-9248-eb305f7b4c09
+    UpdateOrderRequest:
+      title: UpdateOrderRequest
+      required:
+        - fromCustomerCredit
+        - isReturn
+        - orderId
+        - payingParty
+        - paymentType
+        - terminals
+        - waitingTime
+        - customerWalletType
+      type: object
+      properties:
+        fromCustomerCredit:
+          type: boolean
+        isReturn:
+          type: boolean
+        orderId:
+          type: string
+        payingParty:
+          type: integer
+          format: int32
+        paymentType:
+          type: string
+        terminals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Terminal2'
+          description: ''
+        waitingTime:
+          type: integer
+          format: int32
+        customerWalletType:
+          type: string
+      example:
+        fromCustomerCredit: true
+        isReturn: true
+        orderId: 861273
+        payingParty: 1
+        paymentType: prepaid
+        terminals:
+          - id: 603
+            contactName: kiana
+            address: میرداماد، هفتم، تقاطع امیر سهیل تبریزیان، تعاونی داودیه
+            contactPhoneNumber: 09203704100
+            plate: ''
+            sequenceNumber: 1
+            unit: ''
+            comment: ''
+            latitude: 35.763020206104621
+            longitude: 51.435241699218757
+            type: pickup
+            collectCash: no
+            paymentType: prepaid
+            cashOnPickup: 0
+            cashOnDelivery: 0
+            isHub:
+            vendorId:
+          - id: 604
+            contactName: ''
+            address: میرداماد، هفتم، تقاطع آقازاده فرد
+            contactPhoneNumber: ''
+            plate: ''
+            sequenceNumber: 2
+            unit: ''
+            comment: ''
+            latitude: 35.763020206104621
+            longitude: 51.436271667480476
+            type: drop
+            collectCash: no
+            paymentType: prepaid
+            cashOnPickup: 0
+            cashOnDelivery: 0
+            isHub:
+            vendorId:
+          - id: 605
+            contactName: ''
+            address: میرداماد، کتابی، قبل از دیبا، کانون فرهنگی تربیتی شهید مفتح
+            contactPhoneNumber: ''
+            plate: ''
+            sequenceNumber: 3
+            unit: ''
+            comment: ''
+            latitude: 35.753408400755852
+            longitude: 51.447601318359375
+            type: drop
+            collectCash: no
+            paymentType: prepaid
+            cashOnPickup: 0
+            cashOnDelivery: 0
+            isHub:
+            vendorId:
+          - id: 606
+            contactName: ''
+            address: تهران، میرداماد
+            contactPhoneNumber: ''
+            plate: ''
+            sequenceNumber: 4
+            unit: ''
+            comment: ''
+            latitude: 35.758902246890251
+            longitude: 51.442421508789067
+            type: drop
+            collectCash: no
+            paymentType: prepaid
+            cashOnPickup: 0
+            cashOnDelivery: 0
+            isHub:
+            vendorId:
+        waitingTime: 5
+        customerWalletType: ASAN_PARDAKHT
+    Terminal2:
+      title: Terminal2
+      required:
+        - id
+        - contactName
+        - address
+        - contactPhoneNumber
+        - plate
+        - sequenceNumber
+        - unit
+        - comment
+        - latitude
+        - longitude
+        - type
+        - collectCash
+        - paymentType
+        - cashOnPickup
+        - cashOnDelivery
+        - isHub
+        - vendorId
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        contactName:
+          type: string
+        address:
+          type: string
+        contactPhoneNumber:
+          type: string
+        plate:
+          type: string
+        sequenceNumber:
+          type: integer
+          format: int32
+        unit:
+          type: string
+        comment:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        type:
+          type: string
+        collectCash:
+          type: string
+        paymentType:
+          type: string
+        cashOnPickup:
+          type: integer
+          format: int32
+        cashOnDelivery:
+          type: integer
+          format: int32
+        isHub:
+          type: string
+          nullable: true
+        vendorId:
+          type: string
+          nullable: true
+      example:
+        id: 603
+        contactName: kiana
+        address: میرداماد، هفتم، تقاطع امیر سهیل تبریزیان، تعاونی داودیه
+        contactPhoneNumber: 09203704100
+        plate: ''
+        sequenceNumber: 1
+        unit: ''
+        comment: ''
+        latitude: 35.763020206104621
+        longitude: 51.435241699218757
+        type: pickup
+        collectCash: no
+        paymentType: prepaid
+        cashOnPickup: 0
+        cashOnDelivery: 0
+        isHub:
+        vendorId:
+    ORDERACCEPTEDREQUEST:
+      title: ORDERACCEPTEDREQUEST
+      required:
+        - webhookType
+        - orderId
+        - orderStatus
+        - bikerName
+        - bikerPhone
+        - distance
+        - orderAcceptedAt
+        - bikerPhotoUrl
+        - notificationId
+      type: object
+      properties:
+        webhookType:
+          type: string
+        orderId:
+          type: string
+        orderStatus:
+          type: string
+        bikerName:
+          type: string
+        bikerPhone:
+          type: string
+        distance:
+          type: number
+        orderAcceptedAt:
+          type: string
+        bikerPhotoUrl:
+          type: string
+        notificationId:
+          type: integer
+          format: int32
+      example:
+        webhookType: ORDER_ACCEPTED
+        orderId: 2154
+        orderStatus: ACCEPTED
+        bikerName: Mayank Mishra
+        bikerPhone: 8904884293
+        distance: 1.2
+        orderAcceptedAt: '2018-01-01 12:12:34'
+        bikerPhotoUrl: http://url
+        notificationId: 123
+    ORDERARRIVEDREQUEST:
+      title: ORDERARRIVEDREQUEST
+      required:
+        - webhookType
+        - orderId
+        - orderStatus
+        - bikerName
+        - bikerPhone
+        - distance
+        - eta
+        - orderAcceptedAt
+        - bikerPhotoUrl
+        - notificationId
+      type: object
+      properties:
+        webhookType:
+          type: string
+        orderId:
+          type: string
+        orderStatus:
+          type: string
+        bikerName:
+          type: string
+        bikerPhone:
+          type: string
+        distance:
+          type: number
+        eta:
+          type: integer
+          format: int32
+        orderAcceptedAt:
+          type: string
+        bikerPhotoUrl:
+          type: string
+        notificationId:
+          type: integer
+          format: int32
+      example:
+        webhookType: ORDER_ARRIVIED
+        orderId: 2154
+        orderStatus: ARRIVIED
+        bikerName: Mayank Mishra
+        bikerPhone: 8904884293
+        distance: 1.2
+        eta: 5
+        orderAcceptedAt: '2018-01-01 12:12:34'
+        bikerPhotoUrl: http://url
+        notificationId: 123
+    ORDERPICKEDUPREQUEST:
+      title: ORDERPICKEDUPREQUEST
+      required:
+        - webhookType
+        - orderId
+        - orderStatus
+        - bikerName
+        - bikerPhone
+        - distance
+        - eta
+        - orderAcceptedAt
+        - bikerPhotoUrl
+        - notificationId
+      type: object
+      properties:
+        webhookType:
+          type: string
+        orderId:
+          type: string
+        orderStatus:
+          type: string
+        bikerName:
+          type: string
+        bikerPhone:
+          type: string
+        distance:
+          type: number
+        eta:
+          type: integer
+          format: int32
+        orderAcceptedAt:
+          type: string
+        bikerPhotoUrl:
+          type: string
+        notificationId:
+          type: integer
+          format: int32
+      example:
+        webhookType: ORDER_STATUS_UPDATE
+        orderId: 2154
+        orderStatus: PICKED_UP
+        bikerName: Mayank Mishra
+        bikerPhone: 8904884293
+        distance: 1.2
+        eta: 5
+        orderAcceptedAt: '2018-01-01 12:12:34'
+        bikerPhotoUrl: http://url
+        notificationId: 123
+    ORDERDELIVEREDREQUEST:
+      title: ORDERDELIVEREDREQUEST
+      required:
+        - webhookType
+        - orderId
+        - orderStatus
+        - bikerName
+        - bikerPhone
+        - distance
+        - eta
+        - orderAcceptedAt
+        - bikerPhotoUrl
+        - notificationId
+      type: object
+      properties:
+        webhookType:
+          type: string
+        orderId:
+          type: string
+        orderStatus:
+          type: string
+        bikerName:
+          type: string
+        bikerPhone:
+          type: string
+        distance:
+          type: number
+        eta:
+          type: integer
+          format: int32
+        orderAcceptedAt:
+          type: string
+        bikerPhotoUrl:
+          type: string
+        notificationId:
+          type: integer
+          format: int32
+      example:
+        webhookType: ORDER_STATUS_UPDATE
+        orderId: 2154
+        orderStatus: DELIVERED
+        bikerName: Mayank Mishra
+        bikerPhone: 8904884293
+        distance: 1.2
+        eta: 5
+        orderAcceptedAt: '2018-01-01 12:12:34'
+        bikerPhotoUrl: http://url
+        notificationId: 123
+    ORDERCANCELEDREQUEST:
+      title: ORDERCANCELEDREQUEST
+      required:
+        - webhookType
+        - orderId
+        - orderStatus
+        - bikerName
+        - bikerPhone
+        - distance
+        - eta
+        - orderAcceptedAt
+        - bikerPhotoUrl
+        - notificationId
+      type: object
+      properties:
+        webhookType:
+          type: string
+        orderId:
+          type: string
+        orderStatus:
+          type: string
+        bikerName:
+          type: string
+        bikerPhone:
+          type: string
+        distance:
+          type: number
+        eta:
+          type: integer
+          format: int32
+        orderAcceptedAt:
+          type: string
+        bikerPhotoUrl:
+          type: string
+        notificationId:
+          type: integer
+          format: int32
+      example:
+        webhookType: ORDER_STATUS_UPDATE
+        orderId: 2154
+        orderStatus: CANCELLED
+        bikerName: Mayank Mishra
+        bikerPhone: 8904884293
+        distance: 1.2
+        eta: 5
+        orderAcceptedAt: '2018-01-01 12:12:34'
+        bikerPhotoUrl: http://url
+        notificationId: 123
+    ORDERCANCELEDBYSYSTEMREQUEST:
+      title: ORDERCANCELEDBYSYSTEMREQUEST
+      required:
+        - orderId
+        - orderStatus
+        - webhookType
+        - customerRefId
+        - actionBy
+        - batch
+      type: object
+      properties:
+        orderId:
+          type: string
+        orderStatus:
+          type: string
+        webhookType:
+          type: string
+        customerRefId:
+          type: string
+        actionBy:
+          type: string
+        batch:
+          type: boolean
+      example:
+        orderId: 2703246
+        orderStatus: CANCELLED
+        webhookType: ORDER_CANCELLED
+        customerRefId: 1111
+        actionBy: system
+        batch: false
+    PullingEventDTO:
+      title: PullingEventDTO
+      required:
+        - id
+        - type
+        - expireIn
+        - data
+      type: object
+      properties:
+        id:
+          type: number
+          description: 'Id of events'
+          example: 1234
+        type:
+          type: string
+          enum:
+            - ORDER_STATUS_UPDATE
+          example: ORDER_STATUS_UPDATE
+          description: 'Type of event'
+        expireIn:
+          type: string
+          description: 'Time that this event expire in UTC format'
+          example: '2022-06-07T08:13:01.793542Z'
+        data:
+          type: object
+          description: 'Event Payload that store for this recipient before'
+          $ref: '#/components/schemas/PullingDataDTO'
+    PullingDataDTO:
+      title: PullingDataDTO
+      required:
+        - creationTime
+        - notificationId
+        - sequenceNumber
+        - orderId
+        - orderStatus
+        - webhookType
+        - customerRefId
+        - bikerName
+        - bikerPhone
+        - orderAcceptedAt
+        - bikerPhotoUrl
+        - actionBy
+        - batch
+        - invoiceId
+        - invoiceStatus
+      type: object
+      properties:
+        creationTime:
+          type: string
+          description: 'The time that webhook payload create in UTC format'
+          example: '2022-06-07T08:13:01.793542Z'
+        notificationId:
+          type: string
+          description: 'The unique id for each webhook'
+          example: 9aedcecf-9b10-41e7-b2df-8b77ac1c99d0
+        sequenceNumber:
+          type: string
+          description: 'The terminal sequence number of order'
+        orderId:
+          type: string
+        orderStatus:
+          type: string
+          description: 'The current status of order'
+        webhookType:
+          type: string
+          description: 'The type of webhook'
+        customerRefId:
+          type: string
+        bikerName:
+          type: string
+        bikerPhone:
+          type: string
+        orderAcceptedAt:
+          type: string
+          format: time
+        bikerPhotoUrl:
+          type: string
+        actionBy:
+          type: string
+        batch:
+          type: boolean
+        invoiceId:
+          type: string
+        invoiceStatus:
+          type: string
+          enum:
+            - PENDING
+            - SUCCESS
+            - CANCELLED
+
+tags:
+  - name: Methods
+  - name: Webhooks
+    description: Following payloads will be sent through Webhook on all status changes, so you can update your application state based on these events.
+  - name: Pulling
+    description: This APIs used to fetch events on pulling channel
